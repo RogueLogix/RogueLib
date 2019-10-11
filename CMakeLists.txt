@@ -67,7 +67,7 @@ add_subdirectory(boost-cmake)
 
 #add_subdirectory(RogueLib/Exceptions)
 #add_subdirectory(RogueLib/Filesystem)
-#add_subdirectory(RogueLib/GenericBinary)
+add_subdirectory(RogueLib/GenericBinary)
 #add_subdirectory(RogueLib/Logging)
 #add_subdirectory(RogueLib/Networking)
 #add_subdirectory(RogueLib/Scripting)
