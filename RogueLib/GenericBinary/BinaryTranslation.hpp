@@ -10,6 +10,7 @@
 #include <byteswap.h>
 #include <cstring>
 #include <climits>
+#include <RogueLib/Exceptions/Exceptions.hpp>
 
 #if defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64)
 #define X64
@@ -203,6 +204,7 @@ namespace RogueLib::GenericBinary {
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__ || defined (__BIG_ENDIAN__)
     #define DB_BIG_ENDIAN
 #else
+        // the fuck you doing on a PDP11?
 #error Unsupported Endianness
 #endif
 
@@ -281,6 +283,7 @@ namespace RogueLib::GenericBinary {
     // as fast as it gets for a single value
     template<typename T>
     inline std::vector<std::uint8_t> primitiveToBinary(T val) {
+        ROGUELIB_STACKTRACE
         std::vector<std::uint8_t> bytes;
         bytes.resize(sizeof(val) + 1);
         bytes[0] = primitiveTypeID<T>();
@@ -304,24 +307,24 @@ namespace RogueLib::GenericBinary {
     template<typename T, typename std::enable_if_t<
             std::is_integral<T>::value || std::is_floating_point<T>::value, int> = 0>
     inline T fromBinary(std::uint8_t*& ptr, const std::uint8_t* endPtr, Type type) {
-
+        ROGUELIB_STACKTRACE
         switch (removeEndianness(type)) {
             default:
-                return {}; // TODO throw exception __invalid_argument_incompatible_binary_type
+                throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
             case NS_ENUM_TYPE::Bool: {
                 if (ptr < endPtr) {
                     ptr++;
                     return ptr[-1];
                 }
-                return {}; // TODO throw exception __invalid_argument_incompatible_binary_type
+                throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
             }
             case NS_ENUM_TYPE::Int8: {
                 if (ptr > endPtr) {
-                    return {}; // TODO throw exception __invalid_argument_incompatible_binary_type
+                    throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
                 std::int8_t tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
-                    return {}; // TODO throw exception __invalid_argument_incompatible_binary_type
+                    throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
                 contiguousMemoryCopy(&tempval, ptr, 1);
                 ptr++;
@@ -330,7 +333,7 @@ namespace RogueLib::GenericBinary {
             case NS_ENUM_TYPE::Int16: {
                 std::int16_t tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
-                    return {}; // TODO throw exception __invalid_argument_incompatible_binary_type
+                    throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
                 contiguousMemoryCopy(&tempval, ptr, sizeof(tempval));
                 ptr += sizeof(tempval);
@@ -339,7 +342,7 @@ namespace RogueLib::GenericBinary {
             case NS_ENUM_TYPE::Int32: {
                 std::int32_t tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
-                    return {}; // TODO throw exception __invalid_argument_incompatible_binary_type
+                    throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
                 contiguousMemoryCopy(&tempval, ptr, sizeof(tempval));
                 ptr += sizeof(tempval);
@@ -348,7 +351,7 @@ namespace RogueLib::GenericBinary {
             case NS_ENUM_TYPE::Int64: {
                 std::int64_t tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
-                    return {}; // TODO throw exception __invalid_argument_incompatible_binary_type
+                    throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
                 contiguousMemoryCopy(&tempval, ptr, sizeof(tempval));
                 ptr += sizeof(tempval);
@@ -356,14 +359,14 @@ namespace RogueLib::GenericBinary {
             }
             case NS_ENUM_TYPE::uInt8: {
                 if (ptr > endPtr) {
-                    return {}; // TODO throw exception __invalid_argument_incompatible_binary_type
+                    throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
                 return *ptr++;
             }
             case NS_ENUM_TYPE::uInt16: {
                 std::uint16_t tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
-                    return {}; // TODO throw exception __invalid_argument_incompatible_binary_type
+                    throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
                 contiguousMemoryCopy(&tempval, ptr, sizeof(tempval));
                 ptr += sizeof(tempval);
@@ -372,7 +375,7 @@ namespace RogueLib::GenericBinary {
             case NS_ENUM_TYPE::uInt32: {
                 std::uint32_t tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
-                    return {}; // TODO throw exception __invalid_argument_incompatible_binary_type
+                    throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
                 primitiveTypeSize(primitiveTypeID<T>());
                 contiguousMemoryCopy(&tempval, ptr, sizeof(tempval));
@@ -382,7 +385,7 @@ namespace RogueLib::GenericBinary {
             case NS_ENUM_TYPE::uInt64: {
                 std::uint64_t tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
-                    return {}; // TODO throw exception __invalid_argument_incompatible_binary_type
+                    throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
                 contiguousMemoryCopy(&tempval, ptr, sizeof(tempval));
                 ptr += sizeof(tempval);
@@ -391,7 +394,7 @@ namespace RogueLib::GenericBinary {
             case NS_ENUM_TYPE::Float: {
                 float tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
-                    return {}; // TODO throw exception __invalid_argument_incompatible_binary_type
+                    throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
                 contiguousMemoryCopy(&tempval, ptr, sizeof(tempval));
                 ptr += sizeof(tempval);
@@ -400,7 +403,7 @@ namespace RogueLib::GenericBinary {
             case NS_ENUM_TYPE::Double: {
                 double tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
-                    return {}; // TODO throw exception __invalid_argument_incompatible_binary_type
+                    throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
                 contiguousMemoryCopy(&tempval, ptr, sizeof(tempval));
                 ptr += sizeof(tempval);
@@ -411,7 +414,8 @@ namespace RogueLib::GenericBinary {
 
     template<typename T, typename std::enable_if_t<std::is_enum<T>::value, int> = 0>
     inline T fromBinary(std::uint8_t*& ptr, const std::uint8_t* endPtr, Type type) {
-        return static_cast<T>(fromBinary<std::underlying_type_t<T>>(ptr, endPtr, type));
+        return static_cast<T>(fromBinary < std::underlying_type_t<T>>
+        (ptr, endPtr, type));
     }
 
     // consteval
@@ -448,7 +452,7 @@ namespace RogueLib::GenericBinary {
 
     template<typename T>
     inline T returnTypeBS(std::string arag) {
-        return T{};
+        return {};
     }
 
     template<>
@@ -459,17 +463,19 @@ namespace RogueLib::GenericBinary {
 
     template<typename T, typename std::enable_if_t<std::is_same<std::string, T>::value, int> = 0>
     inline T fromBinary(std::uint8_t*& ptr, const std::uint8_t* const endPtr, Type type) {
+        ROGUELIB_STACKTRACE
         if (type == Type::String) {
             auto length = strnlen((const char*) (ptr), std::size_t(endPtr - ptr));
             std::string str{(const char*) (ptr), length};
             return returnTypeBS<T>(str);
         }
-        // TODO throw exception __invalid_argument_incompatible_binary_type
-        return {};
+        throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
+        throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
     }
 
     template<typename T, typename std::enable_if_t<std::is_base_of<Serializable, T>::value, int> = 0>
     inline T fromBinary(std::uint8_t*& ptr, const std::uint8_t* const endPtr, Type type) {
+        ROGUELIB_STACKTRACE
         T t{};
         auto* tPtr = (Serializable*) &t;
         tPtr->fromBinary(ptr, endPtr, type);
@@ -491,15 +497,16 @@ namespace RogueLib::GenericBinary {
 
     template<typename V, typename std::enable_if_t<std::is_same<V, std::vector<bool>>::value, int> = 0>
     V fromBinary(std::uint8_t*& ptr, const std::uint8_t* const endPtr, Type type) {
+        ROGUELIB_STACKTRACE
         std::vector<bool> vector;
         auto checkPtr = [&](std::uint64_t neededBytes) {
             if ((ptr + neededBytes) > endPtr) {
-                // TODO throw exception __invalid_argument_incompatible_binary_type
+                throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
             }
         };
 
         if (type != Type::Vector) {
-            // TODO throw exception __invalid_argument_incompatible_binary_type
+            throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
         }
         checkPtr(1);
         Type lengthType = static_cast<Type>(*ptr++);
@@ -509,7 +516,7 @@ namespace RogueLib::GenericBinary {
         vector.resize(length);
 
         if (primitiveTypeSize(valType) == 0) {
-            // TODO throw exception __invalid_argument_incompatible_binary_type
+            throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
         }
 
         for (std::uint64_t i = 0; i < length; ++i) {
@@ -522,12 +529,13 @@ namespace RogueLib::GenericBinary {
     template<typename V, typename std::enable_if_t<
             is_std_vector<V>::value && !std::is_same<V, std::vector<bool>>::value, int> = 0>
     V fromBinary(std::uint8_t*& ptr, const std::uint8_t* const endPtr, Type type) {
+        ROGUELIB_STACKTRACE
 
         typedef typename V::value_type T;
 
         auto checkPtr = [&](std::uint64_t neededBytes) {
             if ((ptr + neededBytes) > endPtr) {
-                // TODO throw exception __invalid_argument_incompatible_binary_type
+                throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
             }
         };
 
@@ -536,7 +544,7 @@ namespace RogueLib::GenericBinary {
 
 
         if (type != Type::Vector) {
-            // TODO throw exception __invalid_argument_incompatible_binary_type
+            throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
         }
 //            auto length = BinaryConversion<std::uint64_t>::fromBinary(ptr, endPtr);
 
@@ -1088,8 +1096,7 @@ namespace RogueLib::GenericBinary {
                 // yes this is slow, there isn't much i can do about that
                 switch (removeEndianness(type)) {
                     default: {
-                        // TODO throw exception __invalid_argument_incompatible_binary_type
-                        return {};
+                        throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                     }
                     case NS_ENUM_TYPE::Bool: {
                         auto returnVector = castVector<T>(
@@ -1196,17 +1203,18 @@ namespace RogueLib::GenericBinary {
 
     template<typename P, typename std::enable_if_t<is_std_pair<P>::value, int> = 0>
     inline P fromBinary(std::uint8_t*& ptr, const std::uint8_t* const endPtr, Type type) {
+        ROGUELIB_STACKTRACE
         typedef typename P::first_type FT;
         typedef typename P::second_type ST;
 
         P pair{};
         if (ptr >= endPtr) {
-            return {};
+            throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
         }
         Type firstType = static_cast<Type>(*ptr);
         pair.first = fromBinary < FT > (ptr, endPtr, firstType);
         if (ptr >= endPtr) {
-            return {};
+            throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
         }
         Type secondType = static_cast<Type>(*ptr);
         pair.second = fromBinary < ST > (ptr, endPtr, secondType);
@@ -1223,19 +1231,20 @@ namespace RogueLib::GenericBinary {
 
     template<typename M, typename std::enable_if_t<is_std_map<M>::value, int> = 0>
     inline M fromBinary(std::uint8_t*& ptr, const std::uint8_t* const endPtr, Type type) {
+        ROGUELIB_STACKTRACE
         typedef typename M::key_type KT;
         typedef typename M::mapped_type MT;
 
         M map{};
         if (ptr >= endPtr) {
-            return {};
+            throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
         }
 
         Type lengthType = static_cast<Type>(*ptr++);
         auto length = fromBinary < std::uint64_t > (ptr, endPtr, lengthType);
         for (std::uint64_t i = 0; i < length; ++i) {
             if (ptr >= endPtr || *ptr++ != Type::Pair) {
-                return {};
+                throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
             }
             map.insert(fromBinary < std::pair<KT, MT>>
             (ptr, endPtr, Type::Pair));
@@ -1250,6 +1259,7 @@ namespace RogueLib::GenericBinary {
     class BinaryConversion {
     public:
         static std::vector<uint8_t> toBinary(T val) {
+            ROGUELIB_STACKTRACE
             if (std::is_integral<T>::value || std::is_floating_point<T>::value) {
                 return primitiveToBinary(val);
             }
@@ -1262,12 +1272,13 @@ namespace RogueLib::GenericBinary {
                 *(bytes.end() - 1) = 0; // null termination
                 return bytes;
             }
-            return {};
+            throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible type");
         }
 
         static T fromBinary(std::uint8_t*& ptr, const std::uint8_t* const endPtr) {
+            ROGUELIB_STACKTRACE
             if (ptr > endPtr) {
-                return {};
+                throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
             }
             Type type = static_cast<Type>(*ptr++);
             return RogueLib::GenericBinary::fromBinary<T>(ptr, endPtr, type);
@@ -1303,6 +1314,7 @@ namespace RogueLib::GenericBinary {
     class BinaryConversion<std::vector<bool, A>> {
     public:
         static std::vector<uint8_t> toBinary(std::vector<bool, A> val) {
+            ROGUELIB_STACKTRACE
             // vectors of bools are really weird, because they *can* be compacted
             // because i dont use it much, i just encode each bool as a byte
 
@@ -1342,8 +1354,9 @@ namespace RogueLib::GenericBinary {
         }
 
         static std::vector<bool, A> fromBinary(std::uint8_t*& ptr, const std::uint8_t* const endPtr) {
+            ROGUELIB_STACKTRACE
             if ((ptr + 1) > endPtr) {
-                // TODO throw exception __invalid_argument_incompatible_binary_type
+                throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
             }
             Type type = static_cast<Type>(*ptr++);
 
@@ -1355,6 +1368,7 @@ namespace RogueLib::GenericBinary {
     class BinaryConversion<std::vector<T, A>> {
     public:
         static std::vector<uint8_t> toBinary(std::vector<T, A>& val) {
+            ROGUELIB_STACKTRACE
             if (val.size() == 0) {
                 // empty vector
                 std::vector<std::uint8_t> bytes;
@@ -1440,13 +1454,12 @@ namespace RogueLib::GenericBinary {
                 }
                 return bytes;
             }
-            return {};
         }
 
         static std::vector<T, A> fromBinary(std::uint8_t*& ptr, const std::uint8_t* const endPtr) {
-
+            ROGUELIB_STACKTRACE
             if ((ptr + 1) > endPtr) {
-                // TODO throw exception __invalid_argument_incompatible_binary_type
+                throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
             }
             Type type = static_cast<Type>(*ptr++);
 
@@ -1458,6 +1471,7 @@ namespace RogueLib::GenericBinary {
     class BinaryConversion<std::pair<T, A>> {
     public:
         static std::vector<uint8_t> toBinary(std::pair<T, A> val) {
+            ROGUELIB_STACKTRACE
             auto firstBytes = BinaryConversion<T>::toBinary(val.first);
             auto secondBytes = BinaryConversion<A>::toBinary(val.second);
 
@@ -1473,8 +1487,9 @@ namespace RogueLib::GenericBinary {
         }
 
         static std::pair<T, A> fromBinary(std::uint8_t*& ptr, const std::uint8_t* const endPtr) {
+            ROGUELIB_STACKTRACE
             if (ptr >= endPtr) {
-                return {};
+                throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
             }
             Type type = static_cast<Type>(*ptr++);
             return RogueLib::GenericBinary::fromBinary<std::pair<T, A>>(ptr, endPtr, type);
@@ -1486,6 +1501,7 @@ namespace RogueLib::GenericBinary {
     class BinaryConversion<std::map<T, A>> {
     public:
         static std::vector<uint8_t> toBinary(std::map<T, A> val) {
+            ROGUELIB_STACKTRACE
             std::vector<std::uint8_t> bytes;
 
             bytes.emplace_back(Type::Map);
@@ -1502,8 +1518,9 @@ namespace RogueLib::GenericBinary {
         }
 
         static std::map<T, A> fromBinary(std::uint8_t*& ptr, const std::uint8_t* const endPtr) {
+            ROGUELIB_STACKTRACE
             if (ptr >= endPtr) {
-                return {};
+                throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
             }
             Type type = static_cast<Type>(*ptr++);
             return RogueLib::GenericBinary::fromBinary<std::map<T, A>>(ptr, endPtr, type);
@@ -1512,22 +1529,26 @@ namespace RogueLib::GenericBinary {
 
     template<typename T, typename = std::enable_if_t<!std::is_base_of<Serializable, T>::value>>
     std::vector<std::uint8_t> toBinary(T val) {
+        ROGUELIB_STACKTRACE
         return BinaryConversion<T>::toBinary(val);
     }
 
     template<typename T>
     std::vector<std::uint8_t> toBinary(std::vector<T>& val) {
+        ROGUELIB_STACKTRACE
         return BinaryConversion<std::vector<T>>::toBinary(val);
     }
 
     template<typename T, typename = std::enable_if_t<std::is_base_of<Serializable, T>::value>>
     std::vector<std::uint8_t> toBinary(T& val) {
+        ROGUELIB_STACKTRACE
         return BinaryConversion<T>::toBinary(val);
     }
 
 
     template<typename T>
     T fromBinary(std::vector<std::uint8_t>& bytes) {
+        ROGUELIB_STACKTRACE
         auto* start = (std::uint8_t*) bytes.data();
         auto* end = (std::uint8_t*) (bytes.data() + bytes.size());
         return BinaryConversion<T>::fromBinary(start, end);
