@@ -87,7 +87,6 @@ static_assert(sizeof(float) == 4);
 static_assert(sizeof(double) == 8);
 
 //todo long double?
-//todo exceptions
 namespace RogueLib::GenericBinary {
 
     inline void contiguousMemoryCopy(void* dst, const void* src, std::uint64_t size) {
