@@ -61,7 +61,7 @@
         #define X64_AVX
 
         #if __has_include("FastMemCpyAVX.h")
-            #define X86_AVX_MEMCPY
+            #define X64_AVX_MEMCPY
 
             #include "FastMemCpyAVX.h"
 
@@ -91,7 +91,7 @@ static_assert(sizeof(double) == 8);
 namespace RogueLib::GenericBinary {
 
     inline void contiguousMemoryCopy(void* dst, const void* src, std::uint64_t size) {
-        #ifdef X86_AVX_MEMCPY
+        #ifdef X64_AVX_MEMCPY
         memcpy_fast(dst, src, size);
         #else
         memcpy(dst, src, size);
