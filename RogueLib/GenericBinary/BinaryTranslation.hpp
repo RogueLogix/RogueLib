@@ -611,6 +611,9 @@ namespace RogueLib::GenericBinary {
 
                         ptr = (uint8_t*) inavxPtr;
                         outPtr = (uint8_t*) outavxPtr;
+
+                        // because there could be SSE elsewhere, and i dont want to cause a penality there
+                        _mm256_zeroupper();
                     }
         #elif defined(__SSSE3__)
                     if(bytesLeft >= 128) {
@@ -894,6 +897,8 @@ namespace RogueLib::GenericBinary {
                             ptr = (uint8_t*) inavxPtr;
                             outPtr = (uint8_t*) outavxPtr;
                         }
+                        // because there could be SSE elsewhere, and i dont want to cause a penality there
+                        _mm256_zeroupper();
                     }
         #elif defined(__SSSE3__)
                     // yes its basically the AVX code, but not the AVX code
