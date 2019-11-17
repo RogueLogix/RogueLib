@@ -257,6 +257,18 @@ namespace RogueLib::GenericBinary {
         return bswap_64(val);
     }
 
+    template<typename T, std::enable_if_t<std::is_same<T, __int128>::value, int> = 0>
+    constexpr T swapEndianness(T val) {
+        // 128 bit endianness swap without a native way do to this
+        std::uint64_t* ptr_64 = &val;
+        ptr_64[0] = bswap_64(ptr_64[0]);
+        ptr_64[1] = bswap_64(ptr_64[1]);
+        ptr_64[0] ^= ptr_64[1];
+        ptr_64[1] ^= ptr_64[0];
+        ptr_64[0] ^= ptr_64[1];
+        return val;
+    }
+
     template<typename T>
     constexpr T correctEndianness(T val, Endianness endianness) {
         if (endianness != Endianness::NATIVE) {
