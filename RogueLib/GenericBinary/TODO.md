@@ -3,14 +3,6 @@ comments
 
 #Translation
 
-##Exceptions
-
-- Stack tracing, its not done
-
-- This is littered throughout the code, its supposted to be exceptions
-
-     `// TODO throw exception __invalid_argument_incompatible_binary_type`
-     
 ##Optimizations
 Non-x86 platforms dont use special fast paths, because i dont have them to run on.
 
