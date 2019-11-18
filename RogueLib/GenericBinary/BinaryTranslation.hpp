@@ -111,10 +111,12 @@ namespace RogueLib::GenericBinary {
             Int16 = 5,
             Int32 = 6,
             Int64 = 7,
+            Int128 = 18,
             uInt8 = 8,
             uInt16 = 9,
             uInt32 = 10,
             uInt64 = 11,
+            uInt128 = 19,
             Float = 12,
             Double = 13,
             Vector = 15,
@@ -150,6 +152,9 @@ namespace RogueLib::GenericBinary {
         if (std::is_same<T, std::int64_t>::value) {
             return Type::Int64;
         }
+        if (std::is_same<T, __int128>::value) {
+            return Type::Int128;
+        }
 
         if (std::is_same<T, std::uint8_t>::value) {
             return Type::uInt8;
@@ -162,6 +167,9 @@ namespace RogueLib::GenericBinary {
         }
         if (std::is_same<T, std::uint64_t>::value) {
             return Type::uInt64;
+        }
+        if (std::is_same<T, unsigned __int128>::value) {
+            return Type::uInt128;
         }
 
         if (std::is_same<T, float>::value) {
@@ -194,6 +202,9 @@ namespace RogueLib::GenericBinary {
             case NS_ENUM_TYPE::uInt64:
             case NS_ENUM_TYPE::Double:
                 return 8;
+            case NS_ENUM_TYPE::Int128:
+            case NS_ENUM_TYPE::uInt128:
+                return 16;
         }
     }
 
@@ -256,10 +267,11 @@ namespace RogueLib::GenericBinary {
         return bswap_64(val);
     }
 
-    template<typename T, std::enable_if_t<std::is_same<T, __int128>::value, int> = 0>
+    template<typename T, std::enable_if_t<
+            std::is_same<T, __int128>::value || std::is_same<T, unsigned __int128>::value, int> = 0>
     constexpr T swapEndianness(T val) {
         // 128 bit endianness swap without a native way do to this
-        std::uint64_t* ptr_64 = &val;
+        auto* ptr_64 = (uint64_t*) (&val);
         ptr_64[0] = bswap_64(ptr_64[0]);
         ptr_64[1] = bswap_64(ptr_64[1]);
         ptr_64[0] ^= ptr_64[1];
@@ -368,6 +380,15 @@ namespace RogueLib::GenericBinary {
                 ptr += sizeof(tempval);
                 return correctEndianness(tempval, typeEndianness(type));
             }
+            case NS_ENUM_TYPE::Int128: {
+                __int128 tempval;
+                if ((ptr + sizeof(tempval)) > endPtr) {
+                    throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
+                }
+                contiguousMemoryCopy(&tempval, ptr, sizeof(tempval));
+                ptr += sizeof(tempval);
+                return correctEndianness(tempval, typeEndianness(type));
+            }
             case NS_ENUM_TYPE::uInt8: {
                 if (ptr > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
@@ -388,13 +409,21 @@ namespace RogueLib::GenericBinary {
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
-                primitiveTypeSize(primitiveTypeID<T>());
                 contiguousMemoryCopy(&tempval, ptr, sizeof(tempval));
                 ptr += sizeof(tempval);
                 return correctEndianness(tempval, typeEndianness(type));
             }
             case NS_ENUM_TYPE::uInt64: {
                 std::uint64_t tempval;
+                if ((ptr + sizeof(tempval)) > endPtr) {
+                    throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
+                }
+                contiguousMemoryCopy(&tempval, ptr, sizeof(tempval));
+                ptr += sizeof(tempval);
+                return correctEndianness(tempval, typeEndianness(type));
+            }
+            case NS_ENUM_TYPE::uInt128: {
+                unsigned __int128 tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
@@ -562,7 +591,7 @@ namespace RogueLib::GenericBinary {
         if (std::is_integral<T>::value || std::is_floating_point<T>::value) {
             checkPtr(1);
             Type lengthType = static_cast<Type>(*ptr++);
-            auto length = fromBinary < std::uint64_t > (ptr, endPtr, lengthType);
+            auto length = fromBinary<std::uint64_t>(ptr, endPtr, lengthType);
             checkPtr(1);
             Type valType = static_cast<Type>(*ptr++);
             std::vector<T> vector;
@@ -571,7 +600,7 @@ namespace RogueLib::GenericBinary {
             if (removeEndianness(valType) == primitiveTypeID<T>()) {
                 checkPtr(length * sizeof(T));
                 // if its identical to the host representation then its only a memory copy
-                if (sizeof(T) == 1 || typeEndianness(valType) != Endianness::NATIVE) {
+                if (sizeof(T) == 1 || typeEndianness(valType) == Endianness::NATIVE) {
                     auto bytesLeft = length * sizeof(T);
                     auto* outPtr = (std::uint8_t*) vector.data();
     #ifdef X64
@@ -798,6 +827,45 @@ namespace RogueLib::GenericBinary {
                             maskPtr[31] = 0x08;
                         }
 
+                        if (sizeof(T) == 16) {
+                            auto* maskPtr = reinterpret_cast<uint8_t*>(&shuffleMask);
+
+                            // performs 128 bit endianness reverse
+                            maskPtr[0] = 0x0F;
+                            maskPtr[1] = 0x0E;
+                            maskPtr[2] = 0x0D;
+                            maskPtr[3] = 0x0C;
+                            maskPtr[4] = 0x0B;
+                            maskPtr[5] = 0x0A;
+                            maskPtr[6] = 0x09;
+                            maskPtr[7] = 0x08;
+                            maskPtr[8] = 0x07;
+                            maskPtr[9] = 0x06;
+                            maskPtr[10] = 0x05;
+                            maskPtr[11] = 0x04;
+                            maskPtr[12] = 0x03;
+                            maskPtr[13] = 0x02;
+                            maskPtr[14] = 0x01;
+                            maskPtr[15] = 0x00;
+                            maskPtr[16] = 0x0F;
+                            maskPtr[17] = 0x0E;
+                            maskPtr[18] = 0x0D;
+                            maskPtr[19] = 0x0C;
+                            maskPtr[20] = 0x0B;
+                            maskPtr[21] = 0x0A;
+                            maskPtr[22] = 0x09;
+                            maskPtr[23] = 0x08;
+                            maskPtr[24] = 0x07;
+                            maskPtr[25] = 0x06;
+                            maskPtr[26] = 0x05;
+                            maskPtr[27] = 0x04;
+                            maskPtr[28] = 0x03;
+                            maskPtr[29] = 0x02;
+                            maskPtr[30] = 0x01;
+                            maskPtr[31] = 0x00;
+                        }
+
+
 
                         // allows me to write to the first aligned output section
 
@@ -978,6 +1046,27 @@ namespace RogueLib::GenericBinary {
                                 maskPtr[13] = 0x0A;
                                 maskPtr[14] = 0x09;
                                 maskPtr[15] = 0x08;
+                            }
+                            if (sizeof(T) == 16) {
+                                auto* maskPtr = reinterpret_cast<uint8_t*>(&shuffleMask);
+
+                                // performs 128 bit endianness reverse
+                                maskPtr[0] = 0x0F;
+                                maskPtr[1] = 0x0E;
+                                maskPtr[2] = 0x0D;
+                                maskPtr[3] = 0x0C;
+                                maskPtr[4] = 0x0B;
+                                maskPtr[5] = 0x0A;
+                                maskPtr[6] = 0x09;
+                                maskPtr[7] = 0x08;
+                                maskPtr[8] = 0x07;
+                                maskPtr[9] = 0x06;
+                                maskPtr[10] = 0x05;
+                                maskPtr[11] = 0x04;
+                                maskPtr[12] = 0x03;
+                                maskPtr[13] = 0x02;
+                                maskPtr[14] = 0x01;
+                                maskPtr[15] = 0x00;
                             }
 
                             size_t padding = (16 - (((size_t) outPtr) & 15)) & 15;
@@ -1194,7 +1283,7 @@ namespace RogueLib::GenericBinary {
             // so, its a non-integer type.
             checkPtr(1);
             Type lengthType = static_cast<Type>(*ptr++);
-            auto length = fromBinary < std::uint64_t > (ptr, endPtr, lengthType);
+            auto length = fromBinary<std::uint64_t>(ptr, endPtr, lengthType);
             checkPtr(1);
             Type valType = static_cast<Type>(*ptr++);
             std::vector<T> vector;
