@@ -1,20 +1,22 @@
 
 #define USING_ROGUELIB_GENERICBINARY
 
+#include <RogueLib/ROBN/ROBNMap.hpp>
+#include <RogueLib/ROBN/AutoSerializable.hpp>
+
 #include <iostream>
 #include <chrono>
 
 #define BOOST_TEST_MODULE GenericBinary
 
 #include <boost/test/unit_test.hpp>
-#include <RogueLib/GenericBinary/AutoSerializable.hpp>
 
-using namespace RogueLib::GenericBinary;
+using namespace RogueLib::ROBN;
 
 
 BOOST_AUTO_TEST_CASE(stringEncode) {
     srand(std::chrono::system_clock::now().time_since_epoch().count());
-    BOOST_CHECK(toBinary<std::string>("testString")[0] == Type::String);
+    BOOST_CHECK(toROBN<std::string>("testString")[0] == Type::String);
     for (int i = 0; i < 100; ++i) {
         std::uint16_t strlen = rand();
         std::string str;
@@ -25,7 +27,7 @@ BOOST_AUTO_TEST_CASE(stringEncode) {
             }
             str += randChar;
         }
-        auto strBytes = toBinary(str);
+        auto strBytes = toROBN(str);
         BOOST_CHECK(strBytes.size() == strlen + 2);
         BOOST_CHECK(strcmp(str.c_str(), (char*) (strBytes.data() + 1)) == 0);
     }
@@ -47,7 +49,7 @@ BOOST_AUTO_TEST_CASE(stringDecode) {
         }
         strBytes[strlen + 1] = 0;
 
-        std::string str = fromBinary<std::string>(strBytes);
+        std::string str = fromROBN<std::string>(strBytes);
 
         BOOST_CHECK(str.size() == strlen);
         BOOST_CHECK(strcmp(str.c_str(), (char*) (strBytes.data() + 1)) == 0);
@@ -55,11 +57,11 @@ BOOST_AUTO_TEST_CASE(stringDecode) {
 }
 
 BOOST_AUTO_TEST_CASE(boolEncode) {
-    auto trueBytes = toBinary(true);
+    auto trueBytes = toROBN(true);
     BOOST_CHECK(trueBytes.size() == 2);
     BOOST_CHECK(trueBytes[0] == Type::Bool);
     BOOST_CHECK(trueBytes[1] == 1);
-    auto falseBytes = toBinary(false);
+    auto falseBytes = toROBN(false);
     BOOST_CHECK(falseBytes.size() == 2);
     BOOST_CHECK(falseBytes[0] == Type::Bool);
     BOOST_CHECK(falseBytes[1] == 0);
@@ -69,12 +71,12 @@ BOOST_AUTO_TEST_CASE(boolDecode) {
     std::vector<std::uint8_t> decodeTestBytes;
     decodeTestBytes.emplace_back(Type::Bool);
     decodeTestBytes.emplace_back(0);
-    BOOST_CHECK(!fromBinary<bool>(decodeTestBytes));
+    BOOST_CHECK(!fromROBN<bool>(decodeTestBytes));
 
     // C++ 20 defines this behavior
     for (std::uint8_t i = 1; i != 0; ++i) {
         decodeTestBytes[1] = i;
-        BOOST_CHECK(fromBinary<bool>(decodeTestBytes));
+        BOOST_CHECK(fromROBN<bool>(decodeTestBytes));
     }
 }
 //
@@ -87,12 +89,12 @@ BOOST_AUTO_TEST_CASE(int8Decode) {
     std::vector<std::uint8_t> decodeTestBytes;
     decodeTestBytes.emplace_back(Type::Bool);
     decodeTestBytes.emplace_back(0);
-    BOOST_CHECK(!fromBinary<std::int8_t>(decodeTestBytes));
+    BOOST_CHECK(!fromROBN<std::int8_t>(decodeTestBytes));
 
     // C++ 20 defines this behavior
     for (std::uint8_t i = 1; i != 0; ++i) {
         decodeTestBytes[1] = i;
-        BOOST_CHECK(std::int8_t(decodeTestBytes[1]) == fromBinary<std::int8_t>(decodeTestBytes));
+        BOOST_CHECK(std::int8_t(decodeTestBytes[1]) == fromROBN<std::int8_t>(decodeTestBytes));
     }
 }
 

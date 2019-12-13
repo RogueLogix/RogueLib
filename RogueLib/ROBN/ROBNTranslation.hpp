@@ -87,7 +87,9 @@ static_assert(sizeof(float) == 4);
 static_assert(sizeof(double) == 8);
 
 //todo long double?
-namespace RogueLib::GenericBinary {
+namespace RogueLib::ROBN {
+
+    typedef std::vector<uint8_t> ROBN;
 
     inline void contiguousMemoryCopy(void* dst, const void* src, std::uint64_t size) {
         #ifdef X64_AVX_MEMCPY
@@ -125,6 +127,7 @@ namespace RogueLib::GenericBinary {
             SublistStart = 123, // '{' 0x7B
             SublistElementCount = 124, // '|' 0x7C
             SublistEnd = 125, // '}' 0x7D
+            SublistSize = 125, // '~' 0x7E
         };
     }
     typedef NS_ENUM_TYPE::Type Type;
@@ -210,7 +213,7 @@ namespace RogueLib::GenericBinary {
 
     namespace NS_ENUM_ENDIANNESS {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__ || defined(__LITTLE_ENDIAN__)
-#define DB_LITTLE_ENDIAN
+#define GB_LITTLE_ENDIAN
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__ || defined (__BIG_ENDIAN__)
     #define DB_BIG_ENDIAN
 #else
@@ -222,9 +225,9 @@ namespace RogueLib::GenericBinary {
             LITTLE = 0,
             BIG = 1u << 7u, // first bit in the byte, where i look for it
             NATIVE =
-#if defined(DB_LITTLE_ENDIAN)
+#if defined(GB_LITTLE_ENDIAN)
             LITTLE
-#elif defined(DB_BIG_ENDIAN)
+#elif defined(GB_BIG_ENDIAN)
             BIG
 #else
 #error Unsupported Endianness
@@ -290,9 +293,9 @@ namespace RogueLib::GenericBinary {
 
     class Serializable {
     public:
-        virtual std::vector<std::uint8_t> toBinary() = 0;
+        virtual ROBN toROBN() = 0;
 
-        virtual void fromBinary(std::uint8_t*& ptr, const std::uint8_t* endPtr, Type type) = 0;
+        virtual void fromROBN(std::uint8_t*& ptr, const std::uint8_t* endPtr, Type type) = 0;
 
         [[nodiscard]] virtual bool isFixedBinarySize() const {
             return false;
@@ -305,16 +308,27 @@ namespace RogueLib::GenericBinary {
 
     // as fast as it gets for a single value
     template<typename T>
-    inline std::vector<std::uint8_t> primitiveToBinary(T val) {
+    inline ROBN primitiveToROBN(T val) {
         ROGUELIB_STACKTRACE
-        std::vector<std::uint8_t> bytes;
+        ROBN bytes;
         bytes.resize(sizeof(val) + 1);
         bytes[0] = primitiveTypeID<T>();
         contiguousMemoryCopy(bytes.data() + 1, &val, sizeof(val));
         return bytes;
     }
 
-    template<typename NT, typename OT>
+
+    // its used in one spot, and thats only hit if its an integral/fp type
+    template<typename NT, typename OT, typename std::enable_if_t<!(
+            (std::is_integral<NT>::value || std::is_floating_point<NT>::value) &&
+            (std::is_integral<OT>::value || std::is_floating_point<OT>::value)), int> = 0>
+    std::vector<NT> castVector(std::vector<OT> vector) {
+        return {};
+    }
+
+    template<typename NT, typename OT, typename std::enable_if_t<
+            (std::is_integral<NT>::value || std::is_floating_point<NT>::value) &&
+            (std::is_integral<OT>::value || std::is_floating_point<OT>::value), int> = 0>
     std::vector<NT> castVector(std::vector<OT> vector) {
         std::vector<NT> newVector;
         newVector.resize(vector.size());
@@ -329,7 +343,7 @@ namespace RogueLib::GenericBinary {
     // TODO: string interpretation?
     template<typename T, typename std::enable_if_t<
             std::is_integral<T>::value || std::is_floating_point<T>::value, int> = 0>
-    inline T fromBinary(std::uint8_t*& ptr, const std::uint8_t* endPtr, Type type) {
+    inline T fromROBN(std::uint8_t*& ptr, const std::uint8_t* endPtr, Type type) {
         ROGUELIB_STACKTRACE
         switch (removeEndianness(type)) {
             default:
@@ -453,8 +467,8 @@ namespace RogueLib::GenericBinary {
     }
 
     template<typename T, typename std::enable_if_t<std::is_enum<T>::value, int> = 0>
-    inline T fromBinary(std::uint8_t*& ptr, const std::uint8_t* endPtr, Type type) {
-        return static_cast<T>(fromBinary < std::underlying_type_t<T>>
+    inline T fromROBN(std::uint8_t*& ptr, const std::uint8_t* endPtr, Type type) {
+        return static_cast<T>(fromROBN < std::underlying_type_t<T>>
         (ptr, endPtr, type));
     }
 
@@ -502,7 +516,7 @@ namespace RogueLib::GenericBinary {
 
 
     template<typename T, typename std::enable_if_t<std::is_same<std::string, T>::value, int> = 0>
-    inline T fromBinary(std::uint8_t*& ptr, const std::uint8_t* const endPtr, Type type) {
+    inline T fromROBN(std::uint8_t*& ptr, const std::uint8_t* const endPtr, Type type) {
         ROGUELIB_STACKTRACE
         if (type == Type::String) {
             auto length = strnlen((const char*) (ptr), std::size_t(endPtr - ptr));
@@ -514,11 +528,11 @@ namespace RogueLib::GenericBinary {
     }
 
     template<typename T, typename std::enable_if_t<std::is_base_of<Serializable, T>::value, int> = 0>
-    inline T fromBinary(std::uint8_t*& ptr, const std::uint8_t* const endPtr, Type type) {
+    inline T fromROBN(std::uint8_t*& ptr, const std::uint8_t* const endPtr, Type type) {
         ROGUELIB_STACKTRACE
         T t{};
         auto* tPtr = (Serializable*) &t;
-        tPtr->fromBinary(ptr, endPtr, type);
+        tPtr->fromROBN(ptr, endPtr, type);
         return t;
     }
 
@@ -536,7 +550,7 @@ namespace RogueLib::GenericBinary {
 
 
     template<typename V, typename std::enable_if_t<std::is_same<V, std::vector<bool>>::value, int> = 0>
-    V fromBinary(std::uint8_t*& ptr, const std::uint8_t* const endPtr, Type type) {
+    V fromROBN(std::uint8_t*& ptr, const std::uint8_t* const endPtr, Type type) {
         ROGUELIB_STACKTRACE
         std::vector<bool> vector;
         auto checkPtr = [&](std::uint64_t neededBytes) {
@@ -550,7 +564,7 @@ namespace RogueLib::GenericBinary {
         }
         checkPtr(1);
         Type lengthType = static_cast<Type>(*ptr++);
-        auto length = fromBinary < std::uint64_t > (ptr, endPtr, lengthType);
+        auto length = fromROBN < std::uint64_t > (ptr, endPtr, lengthType);
         checkPtr(1);
         Type valType = static_cast<Type>(*ptr++);
         vector.resize(length);
@@ -560,7 +574,7 @@ namespace RogueLib::GenericBinary {
         }
 
         for (std::uint64_t i = 0; i < length; ++i) {
-            vector[i] = RogueLib::GenericBinary::fromBinary<bool>(ptr, endPtr, type);
+            vector[i] = RogueLib::ROBN::fromROBN<bool>(ptr, endPtr, type);
         }
 
         return vector;
@@ -568,7 +582,7 @@ namespace RogueLib::GenericBinary {
 
     template<typename V, typename std::enable_if_t<
             is_std_vector<V>::value && !std::is_same<V, std::vector<bool>>::value, int> = 0>
-    V fromBinary(std::uint8_t*& ptr, const std::uint8_t* const endPtr, Type type) {
+    V fromROBN(std::uint8_t*& ptr, const std::uint8_t* const endPtr, Type type) {
         ROGUELIB_STACKTRACE
 
         typedef typename V::value_type T;
@@ -586,12 +600,12 @@ namespace RogueLib::GenericBinary {
         if (type != Type::Vector) {
             throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
         }
-//            auto length = BinaryConversion<std::uint64_t>::fromBinary(ptr, endPtr);
+//            auto length = BinaryConversion<std::uint64_t>::fromROBN(ptr, endPtr);
 
         if (std::is_integral<T>::value || std::is_floating_point<T>::value) {
             checkPtr(1);
             Type lengthType = static_cast<Type>(*ptr++);
-            auto length = fromBinary<std::uint64_t>(ptr, endPtr, lengthType);
+            auto length = fromROBN < std::uint64_t > (ptr, endPtr, lengthType);
             checkPtr(1);
             Type valType = static_cast<Type>(*ptr++);
             std::vector<T> vector;
@@ -1205,75 +1219,75 @@ namespace RogueLib::GenericBinary {
                     }
                     case NS_ENUM_TYPE::Bool: {
                         auto returnVector = castVector<T>(
-                                RogueLib::GenericBinary::fromBinary<std::vector<bool>>(startPtr, endPtr, type));
+                                RogueLib::ROBN::fromROBN<std::vector<bool>>(startPtr, endPtr, type));
                         ptr = startPtr;
                         return returnVector;
                     }
                     case NS_ENUM_TYPE::Int8: {
                         auto returnVector = castVector<T>(
-                                RogueLib::GenericBinary::fromBinary<std::vector<std::int8_t>>(startPtr, endPtr,
-                                                                                              type));
+                                RogueLib::ROBN::fromROBN<std::vector<std::int8_t>>(startPtr, endPtr,
+                                                                                     type));
                         ptr = startPtr;
                         return returnVector;
                     }
                     case NS_ENUM_TYPE::Int16: {
                         auto returnVector = castVector<T>(
-                                RogueLib::GenericBinary::fromBinary<std::vector<std::int16_t>>(startPtr, endPtr,
-                                                                                               type));
+                                RogueLib::ROBN::fromROBN<std::vector<std::int16_t>>(startPtr, endPtr,
+                                                                                      type));
                         ptr = startPtr;
                         return returnVector;
                     }
                     case NS_ENUM_TYPE::Int32: {
                         auto returnVector = castVector<T>(
-                                RogueLib::GenericBinary::fromBinary<std::vector<std::int32_t>>(startPtr, endPtr,
-                                                                                               type));
+                                RogueLib::ROBN::fromROBN<std::vector<std::int32_t>>(startPtr, endPtr,
+                                                                                      type));
                         ptr = startPtr;
                         return returnVector;
                     }
                     case NS_ENUM_TYPE::Int64: {
                         auto returnVector = castVector<T>(
-                                RogueLib::GenericBinary::fromBinary<std::vector<std::int64_t>>(startPtr, endPtr,
-                                                                                               type));
+                                RogueLib::ROBN::fromROBN<std::vector<std::int64_t>>(startPtr, endPtr,
+                                                                                      type));
                         ptr = startPtr;
                         return returnVector;
                     }
                     case NS_ENUM_TYPE::uInt8: {
                         auto returnVector = castVector<T>(
-                                RogueLib::GenericBinary::fromBinary<std::vector<std::uint8_t>>(startPtr, endPtr,
-                                                                                               type));
+                                RogueLib::ROBN::fromROBN<std::vector<std::uint8_t>>(startPtr, endPtr,
+                                                                                      type));
                         ptr = startPtr;
                         return returnVector;
                     }
                     case NS_ENUM_TYPE::uInt16: {
                         auto returnVector = castVector<T>(
-                                RogueLib::GenericBinary::fromBinary<std::vector<std::uint16_t>>(startPtr, endPtr,
-                                                                                                type));
+                                RogueLib::ROBN::fromROBN<std::vector<std::uint16_t>>(startPtr, endPtr,
+                                                                                       type));
                         ptr = startPtr;
                         return returnVector;
                     }
                     case NS_ENUM_TYPE::uInt32: {
                         auto returnVector = castVector<T>(
-                                RogueLib::GenericBinary::fromBinary<std::vector<std::uint32_t>>(startPtr, endPtr,
-                                                                                                type));
+                                RogueLib::ROBN::fromROBN<std::vector<std::uint32_t>>(startPtr, endPtr,
+                                                                                       type));
                         ptr = startPtr;
                         return returnVector;
                     }
                     case NS_ENUM_TYPE::uInt64: {
                         auto returnVector = castVector<T>(
-                                RogueLib::GenericBinary::fromBinary<std::vector<std::uint64_t>>(startPtr, endPtr,
-                                                                                                type));
+                                RogueLib::ROBN::fromROBN<std::vector<std::uint64_t>>(startPtr, endPtr,
+                                                                                       type));
                         ptr = startPtr;
                         return returnVector;
                     }
                     case NS_ENUM_TYPE::Float: {
                         auto returnVector = castVector<T>(
-                                RogueLib::GenericBinary::fromBinary<std::vector<float>>(startPtr, endPtr, type));
+                                RogueLib::ROBN::fromROBN<std::vector<float>>(startPtr, endPtr, type));
                         ptr = startPtr;
                         return returnVector;
                     }
                     case NS_ENUM_TYPE::Double: {
                         auto returnVector = castVector<T>(
-                                RogueLib::GenericBinary::fromBinary<std::vector<double>>(startPtr, endPtr, type));
+                                RogueLib::ROBN::fromROBN<std::vector<double>>(startPtr, endPtr, type));
                         ptr = startPtr;
                         return returnVector;
                     }
@@ -1283,14 +1297,14 @@ namespace RogueLib::GenericBinary {
             // so, its a non-integer type.
             checkPtr(1);
             Type lengthType = static_cast<Type>(*ptr++);
-            auto length = fromBinary<std::uint64_t>(ptr, endPtr, lengthType);
+            auto length = fromROBN < std::uint64_t > (ptr, endPtr, lengthType);
             checkPtr(1);
             Type valType = static_cast<Type>(*ptr++);
             std::vector<T> vector;
             vector.resize(length);
 
             for (std::uint64_t i = 0; i < length; ++i) {
-                vector[i] = RogueLib::GenericBinary::fromBinary<T>(ptr, endPtr, type);
+                vector[i] = RogueLib::ROBN::fromROBN<T>(ptr, endPtr, type);
             }
 
             return vector;
@@ -1307,7 +1321,7 @@ namespace RogueLib::GenericBinary {
     };
 
     template<typename P, typename std::enable_if_t<is_std_pair<P>::value, int> = 0>
-    inline P fromBinary(std::uint8_t*& ptr, const std::uint8_t* const endPtr, Type type) {
+    inline P fromROBN(std::uint8_t*& ptr, const std::uint8_t* const endPtr, Type type) {
         ROGUELIB_STACKTRACE
         typedef typename P::first_type FT;
         typedef typename P::second_type ST;
@@ -1317,12 +1331,12 @@ namespace RogueLib::GenericBinary {
             throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
         }
         Type firstType = static_cast<Type>(*ptr);
-        pair.first = fromBinary < FT > (ptr, endPtr, firstType);
+        pair.first = fromROBN < FT > (ptr, endPtr, firstType);
         if (ptr >= endPtr) {
             throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
         }
         Type secondType = static_cast<Type>(*ptr);
-        pair.second = fromBinary < ST > (ptr, endPtr, secondType);
+        pair.second = fromROBN < ST > (ptr, endPtr, secondType);
         return pair;
     }
 
@@ -1335,7 +1349,7 @@ namespace RogueLib::GenericBinary {
     };
 
     template<typename M, typename std::enable_if_t<is_std_map<M>::value, int> = 0>
-    inline M fromBinary(std::uint8_t*& ptr, const std::uint8_t* const endPtr, Type type) {
+    inline M fromROBN(std::uint8_t*& ptr, const std::uint8_t* const endPtr, Type type) {
         ROGUELIB_STACKTRACE
         typedef typename M::key_type KT;
         typedef typename M::mapped_type MT;
@@ -1346,12 +1360,12 @@ namespace RogueLib::GenericBinary {
         }
 
         Type lengthType = static_cast<Type>(*ptr++);
-        auto length = fromBinary < std::uint64_t > (ptr, endPtr, lengthType);
+        auto length = fromROBN < std::uint64_t > (ptr, endPtr, lengthType);
         for (std::uint64_t i = 0; i < length; ++i) {
             if (ptr >= endPtr || *ptr++ != Type::Pair) {
                 throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
             }
-            map.insert(fromBinary < std::pair<KT, MT>>
+            map.insert(fromROBN < std::pair<KT, MT>>
             (ptr, endPtr, Type::Pair));
         }
 
@@ -1363,13 +1377,13 @@ namespace RogueLib::GenericBinary {
     template<typename T>
     class BinaryConversion {
     public:
-        static std::vector<uint8_t> toBinary(T val) {
+        static std::vector<uint8_t> toROBN(T val) {
             ROGUELIB_STACKTRACE
             if (std::is_integral<T>::value || std::is_floating_point<T>::value) {
-                return primitiveToBinary(val);
+                return primitiveToROBN(val);
             }
             if (std::is_same<std::string, T>::value) {
-                std::vector<std::uint8_t> bytes;
+                ROBN bytes;
                 auto* valPtr = (std::string*) &val;
                 bytes.resize(valPtr->size() + 2);
                 bytes[0] = Type::String;
@@ -1380,13 +1394,13 @@ namespace RogueLib::GenericBinary {
             throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible type");
         }
 
-        static T fromBinary(std::uint8_t*& ptr, const std::uint8_t* const endPtr) {
+        static T fromROBN(std::uint8_t*& ptr, const std::uint8_t* const endPtr) {
             ROGUELIB_STACKTRACE
             if (ptr > endPtr) {
                 throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
             }
             Type type = static_cast<Type>(*ptr++);
-            return RogueLib::GenericBinary::fromBinary<T>(ptr, endPtr, type);
+            return RogueLib::ROBN::fromROBN<T>(ptr, endPtr, type);
         }
     };
 
@@ -1418,7 +1432,7 @@ namespace RogueLib::GenericBinary {
     template<typename A>
     class BinaryConversion<std::vector<bool, A>> {
     public:
-        static std::vector<uint8_t> toBinary(std::vector<bool, A> val) {
+        static std::vector<uint8_t> toROBN(std::vector<bool, A> val) {
             ROGUELIB_STACKTRACE
             // vectors of bools are really weird, because they *can* be compacted
             // because i dont use it much, i just encode each bool as a byte
@@ -1427,7 +1441,7 @@ namespace RogueLib::GenericBinary {
 
             if (val.size() == 0) {
                 // empty vector
-                std::vector<std::uint8_t> bytes;
+                ROBN bytes;
                 bytes.resize(11);
                 bytes[0] = Type::Vector;
                 bytes[1] = std::uint8_t(
@@ -1438,7 +1452,7 @@ namespace RogueLib::GenericBinary {
                 return bytes;
             }
 
-            std::vector<std::uint8_t> bytes;
+            ROBN bytes;
             // the size is defined already
             bytes.resize(11 + (val.size()));
             auto* dataPtr = bytes.data();
@@ -1458,25 +1472,25 @@ namespace RogueLib::GenericBinary {
             return bytes;
         }
 
-        static std::vector<bool, A> fromBinary(std::uint8_t*& ptr, const std::uint8_t* const endPtr) {
+        static std::vector<bool, A> fromROBN(std::uint8_t*& ptr, const std::uint8_t* const endPtr) {
             ROGUELIB_STACKTRACE
             if ((ptr + 1) > endPtr) {
                 throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
             }
             Type type = static_cast<Type>(*ptr++);
 
-            return RogueLib::GenericBinary::fromBinary<std::vector<bool>>(ptr, endPtr, type);
+            return RogueLib::ROBN::fromROBN<std::vector<bool>>(ptr, endPtr, type);
         }
     };
 
     template<typename T, typename A>
     class BinaryConversion<std::vector<T, A>> {
     public:
-        static std::vector<uint8_t> toBinary(std::vector<T, A>& val) {
+        static std::vector<uint8_t> toROBN(std::vector<T, A>& val) {
             ROGUELIB_STACKTRACE
             if (val.size() == 0) {
                 // empty vector
-                std::vector<std::uint8_t> bytes;
+                ROBN bytes;
                 bytes.resize(11);
                 bytes[0] = Type::Vector;
                 bytes[1] = std::uint8_t(
@@ -1488,7 +1502,7 @@ namespace RogueLib::GenericBinary {
             }
 
             if (std::is_integral<T>::value || std::is_floating_point<T>::value) {
-                std::vector<std::uint8_t> bytes;
+                ROBN bytes;
                 // the size is defined already
                 bytes.resize(11 + (val.size() * sizeof(T)));
                 auto* dataPtr = bytes.data();
@@ -1508,7 +1522,7 @@ namespace RogueLib::GenericBinary {
 
                 // ive tested it, i cant get it to go faster...
 
-                std::vector<std::uint8_t> bytes;
+                ROBN bytes;
 
 //                if (is_std_vector<T>::value) {
 //                    // if its a vector, then i may be able to deduce its size
@@ -1544,7 +1558,7 @@ namespace RogueLib::GenericBinary {
 
                 bool first = true;
                 for (auto& element: val) {
-                    auto vec = BinaryConversion<T>::toBinary(element);
+                    auto vec = BinaryConversion<T>::toROBN(element);
                     if (first) {
                         std::uint64_t newSize = 11 + (val.size() * vec.size());
                         if (newSize > bytes.size()) {
@@ -1561,26 +1575,26 @@ namespace RogueLib::GenericBinary {
             }
         }
 
-        static std::vector<T, A> fromBinary(std::uint8_t*& ptr, const std::uint8_t* const endPtr) {
+        static std::vector<T, A> fromROBN(std::uint8_t*& ptr, const std::uint8_t* const endPtr) {
             ROGUELIB_STACKTRACE
             if ((ptr + 1) > endPtr) {
                 throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
             }
             Type type = static_cast<Type>(*ptr++);
 
-            return RogueLib::GenericBinary::fromBinary<std::vector<T, A>>(ptr, endPtr, type);
+            return RogueLib::ROBN::fromROBN<std::vector<T, A>>(ptr, endPtr, type);
         }
     };
 
     template<typename T, typename A>
     class BinaryConversion<std::pair<T, A>> {
     public:
-        static std::vector<uint8_t> toBinary(std::pair<T, A> val) {
+        static std::vector<uint8_t> toROBN(std::pair<T, A> val) {
             ROGUELIB_STACKTRACE
-            auto firstBytes = BinaryConversion<T>::toBinary(val.first);
-            auto secondBytes = BinaryConversion<A>::toBinary(val.second);
+            auto firstBytes = BinaryConversion<T>::toROBN(val.first);
+            auto secondBytes = BinaryConversion<A>::toROBN(val.second);
 
-            std::vector<std::uint8_t> bytes;
+            ROBN bytes;
             bytes.resize(firstBytes.size() + secondBytes.size() + 1);
             auto data = bytes.data();
             data[0] = Type::Pair;
@@ -1591,13 +1605,13 @@ namespace RogueLib::GenericBinary {
             return bytes;
         }
 
-        static std::pair<T, A> fromBinary(std::uint8_t*& ptr, const std::uint8_t* const endPtr) {
+        static std::pair<T, A> fromROBN(std::uint8_t*& ptr, const std::uint8_t* const endPtr) {
             ROGUELIB_STACKTRACE
             if (ptr >= endPtr) {
                 throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
             }
             Type type = static_cast<Type>(*ptr++);
-            return RogueLib::GenericBinary::fromBinary<std::pair<T, A>>(ptr, endPtr, type);
+            return RogueLib::ROBN::fromROBN<std::pair<T, A>>(ptr, endPtr, type);
         }
     };
 
@@ -1605,57 +1619,64 @@ namespace RogueLib::GenericBinary {
     template<typename T, typename A>
     class BinaryConversion<std::map<T, A>> {
     public:
-        static std::vector<uint8_t> toBinary(std::map<T, A> val) {
+        static std::vector<uint8_t> toROBN(std::map<T, A> val) {
             ROGUELIB_STACKTRACE
-            std::vector<std::uint8_t> bytes;
+            ROBN bytes;
 
             bytes.emplace_back(Type::Map);
 
-            auto lengthBytes = BinaryConversion<std::uint64_t>::toBinary(val.size());
+            auto lengthBytes = BinaryConversion<std::uint64_t>::toROBN(val.size());
             bytes.insert(bytes.end(), lengthBytes.begin(), lengthBytes.end());
 
             for (auto elementPair : val) {
-                auto pairBytes = BinaryConversion<std::pair<T, A>>::toBinary(elementPair);
+                auto pairBytes = BinaryConversion<std::pair<T, A>>::toROBN(elementPair);
                 bytes.insert(bytes.end(), pairBytes.begin(), pairBytes.end());
             }
 
             return bytes;
         }
 
-        static std::map<T, A> fromBinary(std::uint8_t*& ptr, const std::uint8_t* const endPtr) {
+        static std::map<T, A> fromROBN(std::uint8_t*& ptr, const std::uint8_t* const endPtr) {
             ROGUELIB_STACKTRACE
             if (ptr >= endPtr) {
                 throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
             }
             Type type = static_cast<Type>(*ptr++);
-            return RogueLib::GenericBinary::fromBinary<std::map<T, A>>(ptr, endPtr, type);
+            return RogueLib::ROBN::fromROBN<std::map<T, A>>(ptr, endPtr, type);
         }
     };
 
-    template<typename T, typename = std::enable_if_t<!std::is_base_of<Serializable, T>::value>>
-    std::vector<std::uint8_t> toBinary(T val) {
+    template<typename T, typename std::enable_if_t<!(std::is_base_of<Serializable, T>::value ||
+                                                     std::is_enum<T>::value), int> = 0>
+    ROBN toROBN(T val) {
         ROGUELIB_STACKTRACE
-        return BinaryConversion<T>::toBinary(val);
+        return BinaryConversion<T>::toROBN(val);
     }
 
     template<typename T>
-    std::vector<std::uint8_t> toBinary(std::vector<T>& val) {
+    ROBN toROBN(std::vector<T>& val) {
         ROGUELIB_STACKTRACE
-        return BinaryConversion<std::vector<T>>::toBinary(val);
+        return BinaryConversion<std::vector<T>>::toROBN(val);
     }
 
-    template<typename T, typename = std::enable_if_t<std::is_base_of<Serializable, T>::value>>
-    std::vector<std::uint8_t> toBinary(T& val) {
+    template<typename T, typename std::enable_if_t<std::is_base_of<Serializable, T>::value, int> = 0>
+    ROBN toROBN(T& val) {
         ROGUELIB_STACKTRACE
-        return BinaryConversion<T>::toBinary(val);
+        return BinaryConversion<T>::toROBN(val);
     }
 
+    template<typename T, typename std::enable_if_t<std::is_enum<T>::value, int> = 0>
+    ROBN toROBN(T val) {
+        ROGUELIB_STACKTRACE
+        typedef typename std::underlying_type<T>::type UnderlyingType;
+        return BinaryConversion<UnderlyingType>::toROBN(static_cast<UnderlyingType>(val));
+    }
 
     template<typename T>
-    T fromBinary(std::vector<std::uint8_t>& bytes) {
+    T fromROBN(ROBN bytes) {
         ROGUELIB_STACKTRACE
         auto* start = (std::uint8_t*) bytes.data();
         auto* end = (std::uint8_t*) (bytes.data() + bytes.size());
-        return BinaryConversion<T>::fromBinary(start, end);
+        return BinaryConversion<T>::fromROBN(start, end);
     }
 }
