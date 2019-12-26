@@ -241,7 +241,7 @@ namespace RogueLib::ROBN {
     }
 
     constexpr Endianness typeEndianness(Type type) {
-        return static_cast<Endianness>(type & Endianness::BIG);
+        return static_cast<Endianness>(std::uint8_t(type) & std::uint8_t(Endianness::BIG));
     }
 
     template<typename T,
@@ -995,202 +995,202 @@ namespace RogueLib::ROBN {
                     }
         #elif defined(__SSSE3__)
                     // yes its basically the AVX code, but not the AVX code
-                        if (bytesLeft >= 128) {
-                            __m128i shuffleMask = {};
-                            // this is compile time, or at least should be
-                            if (sizeof(T) == 2) {
-                                auto* maskPtr = reinterpret_cast<uint8_t*>(&shuffleMask);
+                    if (bytesLeft >= 128) {
+                        __m128i shuffleMask = {};
+                        // this is compile time, or at least should be
+                        if (sizeof(T) == 2) {
+                            auto* maskPtr = reinterpret_cast<uint8_t*>(&shuffleMask);
 
-                                // performs 16 bit endianness reverse
-                                maskPtr[0] = 0x01;
-                                maskPtr[1] = 0x00;
-                                maskPtr[2] = 0x03;
-                                maskPtr[3] = 0x02;
-                                maskPtr[4] = 0x05;
-                                maskPtr[5] = 0x04;
-                                maskPtr[6] = 0x07;
-                                maskPtr[7] = 0x06;
-                                maskPtr[8] = 0x09;
-                                maskPtr[9] = 0x08;
-                                maskPtr[10] = 0x0B;
-                                maskPtr[11] = 0x0A;
-                                maskPtr[12] = 0x0D;
-                                maskPtr[13] = 0x0C;
-                                maskPtr[14] = 0x0F;
-                                maskPtr[15] = 0x0E;
-                            }
-                            if (sizeof(T) == 4) {
-                                auto* maskPtr = reinterpret_cast<uint8_t*>(&shuffleMask);
-
-                                // performs 32 bit endianness reverse
-                                maskPtr[0] = 0x03;
-                                maskPtr[1] = 0x02;
-                                maskPtr[2] = 0x01;
-                                maskPtr[3] = 0x00;
-                                maskPtr[4] = 0x07;
-                                maskPtr[5] = 0x06;
-                                maskPtr[6] = 0x05;
-                                maskPtr[7] = 0x04;
-                                maskPtr[8] = 0x0B;
-                                maskPtr[9] = 0x0A;
-                                maskPtr[10] = 0x09;
-                                maskPtr[11] = 0x08;
-                                maskPtr[12] = 0x0F;
-                                maskPtr[13] = 0x0E;
-                                maskPtr[14] = 0x0D;
-                                maskPtr[15] = 0x0C;
-                            }
-                            if (sizeof(T) == 8) {
-                                auto* maskPtr = reinterpret_cast<uint8_t*>(&shuffleMask);
-
-                                // performs 64 bit endianness reverse
-                                maskPtr[0] = 0x07;
-                                maskPtr[1] = 0x06;
-                                maskPtr[2] = 0x05;
-                                maskPtr[3] = 0x04;
-                                maskPtr[4] = 0x03;
-                                maskPtr[5] = 0x02;
-                                maskPtr[6] = 0x01;
-                                maskPtr[7] = 0x00;
-                                maskPtr[8] = 0x0F;
-                                maskPtr[9] = 0x0E;
-                                maskPtr[10] = 0x0D;
-                                maskPtr[11] = 0x0C;
-                                maskPtr[12] = 0x0B;
-                                maskPtr[13] = 0x0A;
-                                maskPtr[14] = 0x09;
-                                maskPtr[15] = 0x08;
-                            }
-                            if (sizeof(T) == 16) {
-                                auto* maskPtr = reinterpret_cast<uint8_t*>(&shuffleMask);
-
-                                // performs 128 bit endianness reverse
-                                maskPtr[0] = 0x0F;
-                                maskPtr[1] = 0x0E;
-                                maskPtr[2] = 0x0D;
-                                maskPtr[3] = 0x0C;
-                                maskPtr[4] = 0x0B;
-                                maskPtr[5] = 0x0A;
-                                maskPtr[6] = 0x09;
-                                maskPtr[7] = 0x08;
-                                maskPtr[8] = 0x07;
-                                maskPtr[9] = 0x06;
-                                maskPtr[10] = 0x05;
-                                maskPtr[11] = 0x04;
-                                maskPtr[12] = 0x03;
-                                maskPtr[13] = 0x02;
-                                maskPtr[14] = 0x01;
-                                maskPtr[15] = 0x00;
-                            }
-
-                            size_t padding = (16 - (((size_t) outPtr) & 15)) & 15;
-
-                            // check to make sure that we *can* align the memory
-                            if (padding % sizeof(T) == 0) {
-
-                                __m128i_u head = _mm_loadu_si128((const __m128i_u*) ptr);
-                                head = _mm_shuffle_epi8(head, shuffleMask);
-                                _mm_store_si128((__m128i_u*) outPtr, head);
-                                ptr += padding;
-                                outPtr += padding;
-                                bytesLeft -= padding;
-
-                                auto* inSSSEPtr = ((const __m128i_u*) ptr);
-                                auto* outSSSEPtr = ((__m128i*) outPtr);
-
-                                _mm_prefetch((const char*) (inSSSEPtr), _MM_HINT_NTA);
-
-                                while (bytesLeft >= 128) {
-                                    bytesLeft -= 128;
-
-                                    __m128i c0, c1, c2, c3, c4, c5, c6, c7;
-
-                                    c0 = _mm_loadu_si128(inSSSEPtr + 0);
-                                    c1 = _mm_loadu_si128(inSSSEPtr + 1);
-                                    c2 = _mm_loadu_si128(inSSSEPtr + 2);
-                                    c3 = _mm_loadu_si128(inSSSEPtr + 3);
-                                    c4 = _mm_loadu_si128(inSSSEPtr + 4);
-                                    c5 = _mm_loadu_si128(inSSSEPtr + 5);
-                                    c6 = _mm_loadu_si128(inSSSEPtr + 6);
-                                    c7 = _mm_loadu_si128(inSSSEPtr + 7);
-                                    _mm_prefetch((const char*) (inSSSEPtr + 256), _MM_HINT_NTA);
-                                    inSSSEPtr += 8;
-
-                                    c0 = _mm_shuffle_epi8(c0, shuffleMask);
-                                    c1 = _mm_shuffle_epi8(c1, shuffleMask);
-                                    c2 = _mm_shuffle_epi8(c2, shuffleMask);
-                                    c3 = _mm_shuffle_epi8(c3, shuffleMask);
-                                    c4 = _mm_shuffle_epi8(c4, shuffleMask);
-                                    c5 = _mm_shuffle_epi8(c5, shuffleMask);
-                                    c6 = _mm_shuffle_epi8(c6, shuffleMask);
-                                    c7 = _mm_shuffle_epi8(c7, shuffleMask);
-
-                                    _mm_stream_si128(outSSSEPtr + 0, c0);
-                                    _mm_stream_si128(outSSSEPtr + 1, c1);
-                                    _mm_stream_si128(outSSSEPtr + 2, c2);
-                                    _mm_stream_si128(outSSSEPtr + 3, c3);
-                                    _mm_stream_si128(outSSSEPtr + 4, c4);
-                                    _mm_stream_si128(outSSSEPtr + 5, c5);
-                                    _mm_stream_si128(outSSSEPtr + 6, c6);
-                                    _mm_stream_si128(outSSSEPtr + 7, c7);
-                                    outSSSEPtr += 8;
-                                }
-
-                                _mm_sfence();
-
-                                ptr = (uint8_t*) inSSSEPtr;
-                                outPtr = (uint8_t*) outSSSEPtr;
-                            } else {
-                                //  cant align the output
-
-
-                                auto* inSSSEPtr = ((const __m128i_u*) ptr);
-                                auto* outSSSEPtr = ((__m128i_u*) outPtr);
-
-                                _mm_prefetch((const char*) (inSSSEPtr), _MM_HINT_NTA);
-
-                                while (bytesLeft >= 256) {
-                                    bytesLeft -= 256;
-
-                                    __m128i c0, c1, c2, c3, c4, c5, c6, c7;
-
-                                    c0 = _mm_loadu_si128(inSSSEPtr + 0);
-                                    c1 = _mm_loadu_si128(inSSSEPtr + 1);
-                                    c2 = _mm_loadu_si128(inSSSEPtr + 2);
-                                    c3 = _mm_loadu_si128(inSSSEPtr + 3);
-                                    c4 = _mm_loadu_si128(inSSSEPtr + 4);
-                                    c5 = _mm_loadu_si128(inSSSEPtr + 5);
-                                    c6 = _mm_loadu_si128(inSSSEPtr + 6);
-                                    c7 = _mm_loadu_si128(inSSSEPtr + 7);
-                                    _mm_prefetch((const char*) (inSSSEPtr + 256), _MM_HINT_NTA);
-                                    inSSSEPtr += 8;
-
-                                    c0 = _mm_shuffle_epi8(c0, shuffleMask);
-                                    c1 = _mm_shuffle_epi8(c1, shuffleMask);
-                                    c2 = _mm_shuffle_epi8(c2, shuffleMask);
-                                    c3 = _mm_shuffle_epi8(c3, shuffleMask);
-                                    c4 = _mm_shuffle_epi8(c4, shuffleMask);
-                                    c5 = _mm_shuffle_epi8(c5, shuffleMask);
-                                    c6 = _mm_shuffle_epi8(c6, shuffleMask);
-                                    c7 = _mm_shuffle_epi8(c7, shuffleMask);
-
-                                    _mm_store_si128(outSSSEPtr + 0, c0);
-                                    _mm_store_si128(outSSSEPtr + 1, c1);
-                                    _mm_store_si128(outSSSEPtr + 2, c2);
-                                    _mm_store_si128(outSSSEPtr + 3, c3);
-                                    _mm_store_si128(outSSSEPtr + 4, c4);
-                                    _mm_store_si128(outSSSEPtr + 5, c5);
-                                    _mm_store_si128(outSSSEPtr + 6, c6);
-                                    _mm_store_si128(outSSSEPtr + 7, c7);
-                                    outSSSEPtr += 8;
-                                }
-
-                                _mm_sfence();
-
-                                ptr = (uint8_t*) inSSSEPtr;
-                                outPtr = (uint8_t*) outSSSEPtr;
-                            }
+                            // performs 16 bit endianness reverse
+                            maskPtr[0] = 0x01;
+                            maskPtr[1] = 0x00;
+                            maskPtr[2] = 0x03;
+                            maskPtr[3] = 0x02;
+                            maskPtr[4] = 0x05;
+                            maskPtr[5] = 0x04;
+                            maskPtr[6] = 0x07;
+                            maskPtr[7] = 0x06;
+                            maskPtr[8] = 0x09;
+                            maskPtr[9] = 0x08;
+                            maskPtr[10] = 0x0B;
+                            maskPtr[11] = 0x0A;
+                            maskPtr[12] = 0x0D;
+                            maskPtr[13] = 0x0C;
+                            maskPtr[14] = 0x0F;
+                            maskPtr[15] = 0x0E;
                         }
+                        if (sizeof(T) == 4) {
+                            auto* maskPtr = reinterpret_cast<uint8_t*>(&shuffleMask);
+
+                            // performs 32 bit endianness reverse
+                            maskPtr[0] = 0x03;
+                            maskPtr[1] = 0x02;
+                            maskPtr[2] = 0x01;
+                            maskPtr[3] = 0x00;
+                            maskPtr[4] = 0x07;
+                            maskPtr[5] = 0x06;
+                            maskPtr[6] = 0x05;
+                            maskPtr[7] = 0x04;
+                            maskPtr[8] = 0x0B;
+                            maskPtr[9] = 0x0A;
+                            maskPtr[10] = 0x09;
+                            maskPtr[11] = 0x08;
+                            maskPtr[12] = 0x0F;
+                            maskPtr[13] = 0x0E;
+                            maskPtr[14] = 0x0D;
+                            maskPtr[15] = 0x0C;
+                        }
+                        if (sizeof(T) == 8) {
+                            auto* maskPtr = reinterpret_cast<uint8_t*>(&shuffleMask);
+
+                            // performs 64 bit endianness reverse
+                            maskPtr[0] = 0x07;
+                            maskPtr[1] = 0x06;
+                            maskPtr[2] = 0x05;
+                            maskPtr[3] = 0x04;
+                            maskPtr[4] = 0x03;
+                            maskPtr[5] = 0x02;
+                            maskPtr[6] = 0x01;
+                            maskPtr[7] = 0x00;
+                            maskPtr[8] = 0x0F;
+                            maskPtr[9] = 0x0E;
+                            maskPtr[10] = 0x0D;
+                            maskPtr[11] = 0x0C;
+                            maskPtr[12] = 0x0B;
+                            maskPtr[13] = 0x0A;
+                            maskPtr[14] = 0x09;
+                            maskPtr[15] = 0x08;
+                        }
+                        if (sizeof(T) == 16) {
+                            auto* maskPtr = reinterpret_cast<uint8_t*>(&shuffleMask);
+
+                            // performs 128 bit endianness reverse
+                            maskPtr[0] = 0x0F;
+                            maskPtr[1] = 0x0E;
+                            maskPtr[2] = 0x0D;
+                            maskPtr[3] = 0x0C;
+                            maskPtr[4] = 0x0B;
+                            maskPtr[5] = 0x0A;
+                            maskPtr[6] = 0x09;
+                            maskPtr[7] = 0x08;
+                            maskPtr[8] = 0x07;
+                            maskPtr[9] = 0x06;
+                            maskPtr[10] = 0x05;
+                            maskPtr[11] = 0x04;
+                            maskPtr[12] = 0x03;
+                            maskPtr[13] = 0x02;
+                            maskPtr[14] = 0x01;
+                            maskPtr[15] = 0x00;
+                        }
+
+                        size_t padding = (16 - (((size_t) outPtr) & 15)) & 15;
+
+                        // check to make sure that we *can* align the memory
+                        if (padding % sizeof(T) == 0) {
+
+                            __m128i_u head = _mm_loadu_si128((const __m128i_u*) ptr);
+                            head = _mm_shuffle_epi8(head, shuffleMask);
+                            _mm_store_si128((__m128i_u*) outPtr, head);
+                            ptr += padding;
+                            outPtr += padding;
+                            bytesLeft -= padding;
+
+                            auto* inSSSEPtr = ((const __m128i_u*) ptr);
+                            auto* outSSSEPtr = ((__m128i*) outPtr);
+
+                            _mm_prefetch((const char*) (inSSSEPtr), _MM_HINT_NTA);
+
+                            while (bytesLeft >= 128) {
+                                bytesLeft -= 128;
+
+                                __m128i c0, c1, c2, c3, c4, c5, c6, c7;
+
+                                c0 = _mm_loadu_si128(inSSSEPtr + 0);
+                                c1 = _mm_loadu_si128(inSSSEPtr + 1);
+                                c2 = _mm_loadu_si128(inSSSEPtr + 2);
+                                c3 = _mm_loadu_si128(inSSSEPtr + 3);
+                                c4 = _mm_loadu_si128(inSSSEPtr + 4);
+                                c5 = _mm_loadu_si128(inSSSEPtr + 5);
+                                c6 = _mm_loadu_si128(inSSSEPtr + 6);
+                                c7 = _mm_loadu_si128(inSSSEPtr + 7);
+                                _mm_prefetch((const char*) (inSSSEPtr + 256), _MM_HINT_NTA);
+                                inSSSEPtr += 8;
+
+                                c0 = _mm_shuffle_epi8(c0, shuffleMask);
+                                c1 = _mm_shuffle_epi8(c1, shuffleMask);
+                                c2 = _mm_shuffle_epi8(c2, shuffleMask);
+                                c3 = _mm_shuffle_epi8(c3, shuffleMask);
+                                c4 = _mm_shuffle_epi8(c4, shuffleMask);
+                                c5 = _mm_shuffle_epi8(c5, shuffleMask);
+                                c6 = _mm_shuffle_epi8(c6, shuffleMask);
+                                c7 = _mm_shuffle_epi8(c7, shuffleMask);
+
+                                _mm_stream_si128(outSSSEPtr + 0, c0);
+                                _mm_stream_si128(outSSSEPtr + 1, c1);
+                                _mm_stream_si128(outSSSEPtr + 2, c2);
+                                _mm_stream_si128(outSSSEPtr + 3, c3);
+                                _mm_stream_si128(outSSSEPtr + 4, c4);
+                                _mm_stream_si128(outSSSEPtr + 5, c5);
+                                _mm_stream_si128(outSSSEPtr + 6, c6);
+                                _mm_stream_si128(outSSSEPtr + 7, c7);
+                                outSSSEPtr += 8;
+                            }
+
+                            _mm_sfence();
+
+                            ptr = (uint8_t*) inSSSEPtr;
+                            outPtr = (uint8_t*) outSSSEPtr;
+                        } else {
+                            //  cant align the output
+
+
+                            auto* inSSSEPtr = ((const __m128i_u*) ptr);
+                            auto* outSSSEPtr = ((__m128i_u*) outPtr);
+
+                            _mm_prefetch((const char*) (inSSSEPtr), _MM_HINT_NTA);
+
+                            while (bytesLeft >= 256) {
+                                bytesLeft -= 256;
+
+                                __m128i c0, c1, c2, c3, c4, c5, c6, c7;
+
+                                c0 = _mm_loadu_si128(inSSSEPtr + 0);
+                                c1 = _mm_loadu_si128(inSSSEPtr + 1);
+                                c2 = _mm_loadu_si128(inSSSEPtr + 2);
+                                c3 = _mm_loadu_si128(inSSSEPtr + 3);
+                                c4 = _mm_loadu_si128(inSSSEPtr + 4);
+                                c5 = _mm_loadu_si128(inSSSEPtr + 5);
+                                c6 = _mm_loadu_si128(inSSSEPtr + 6);
+                                c7 = _mm_loadu_si128(inSSSEPtr + 7);
+                                _mm_prefetch((const char*) (inSSSEPtr + 256), _MM_HINT_NTA);
+                                inSSSEPtr += 8;
+
+                                c0 = _mm_shuffle_epi8(c0, shuffleMask);
+                                c1 = _mm_shuffle_epi8(c1, shuffleMask);
+                                c2 = _mm_shuffle_epi8(c2, shuffleMask);
+                                c3 = _mm_shuffle_epi8(c3, shuffleMask);
+                                c4 = _mm_shuffle_epi8(c4, shuffleMask);
+                                c5 = _mm_shuffle_epi8(c5, shuffleMask);
+                                c6 = _mm_shuffle_epi8(c6, shuffleMask);
+                                c7 = _mm_shuffle_epi8(c7, shuffleMask);
+
+                                _mm_store_si128(outSSSEPtr + 0, c0);
+                                _mm_store_si128(outSSSEPtr + 1, c1);
+                                _mm_store_si128(outSSSEPtr + 2, c2);
+                                _mm_store_si128(outSSSEPtr + 3, c3);
+                                _mm_store_si128(outSSSEPtr + 4, c4);
+                                _mm_store_si128(outSSSEPtr + 5, c5);
+                                _mm_store_si128(outSSSEPtr + 6, c6);
+                                _mm_store_si128(outSSSEPtr + 7, c7);
+                                outSSSEPtr += 8;
+                            }
+
+                            _mm_sfence();
+
+                            ptr = (uint8_t*) inSSSEPtr;
+                            outPtr = (uint8_t*) outSSSEPtr;
+                        }
+                    }
         #endif
     #else
     #endif
@@ -1226,56 +1226,56 @@ namespace RogueLib::ROBN {
                     case NS_ENUM_TYPE::Int8: {
                         auto returnVector = castVector<T>(
                                 RogueLib::ROBN::fromROBN<std::vector<std::int8_t>>(startPtr, endPtr,
-                                                                                     type));
+                                                                                   type));
                         ptr = startPtr;
                         return returnVector;
                     }
                     case NS_ENUM_TYPE::Int16: {
                         auto returnVector = castVector<T>(
                                 RogueLib::ROBN::fromROBN<std::vector<std::int16_t>>(startPtr, endPtr,
-                                                                                      type));
+                                                                                    type));
                         ptr = startPtr;
                         return returnVector;
                     }
                     case NS_ENUM_TYPE::Int32: {
                         auto returnVector = castVector<T>(
                                 RogueLib::ROBN::fromROBN<std::vector<std::int32_t>>(startPtr, endPtr,
-                                                                                      type));
+                                                                                    type));
                         ptr = startPtr;
                         return returnVector;
                     }
                     case NS_ENUM_TYPE::Int64: {
                         auto returnVector = castVector<T>(
                                 RogueLib::ROBN::fromROBN<std::vector<std::int64_t>>(startPtr, endPtr,
-                                                                                      type));
+                                                                                    type));
                         ptr = startPtr;
                         return returnVector;
                     }
                     case NS_ENUM_TYPE::uInt8: {
                         auto returnVector = castVector<T>(
                                 RogueLib::ROBN::fromROBN<std::vector<std::uint8_t>>(startPtr, endPtr,
-                                                                                      type));
+                                                                                    type));
                         ptr = startPtr;
                         return returnVector;
                     }
                     case NS_ENUM_TYPE::uInt16: {
                         auto returnVector = castVector<T>(
                                 RogueLib::ROBN::fromROBN<std::vector<std::uint16_t>>(startPtr, endPtr,
-                                                                                       type));
+                                                                                     type));
                         ptr = startPtr;
                         return returnVector;
                     }
                     case NS_ENUM_TYPE::uInt32: {
                         auto returnVector = castVector<T>(
                                 RogueLib::ROBN::fromROBN<std::vector<std::uint32_t>>(startPtr, endPtr,
-                                                                                       type));
+                                                                                     type));
                         ptr = startPtr;
                         return returnVector;
                     }
                     case NS_ENUM_TYPE::uInt64: {
                         auto returnVector = castVector<T>(
                                 RogueLib::ROBN::fromROBN<std::vector<std::uint64_t>>(startPtr, endPtr,
-                                                                                       type));
+                                                                                     type));
                         ptr = startPtr;
                         return returnVector;
                     }
@@ -1444,8 +1444,8 @@ namespace RogueLib::ROBN {
                 ROBN bytes;
                 bytes.resize(11);
                 bytes[0] = Type::Vector;
-                bytes[1] = std::uint8_t(
-                        Type::uInt64 | Endianness::NATIVE); // endianness doesnt matter because its zero
+                bytes[1] = std::uint8_t(Type::uInt64) |
+                           std::uint8_t(Endianness::NATIVE); // endianness doesnt matter because its zero
                 for (int i = 2; i < 11; ++i) {
                     bytes[i] = 0;
                 }
@@ -1458,7 +1458,7 @@ namespace RogueLib::ROBN {
             auto* dataPtr = bytes.data();
 
             dataPtr[0] = Type::Vector;
-            dataPtr[1] = std::uint8_t(Type::uInt64 | Endianness::NATIVE);
+            dataPtr[1] = std::uint8_t(Type::uInt64) | std::uint8_t(Endianness::NATIVE);
             dataPtr += 2;
             std::uint64_t length = val.size();
             contiguousMemoryCopy(dataPtr, &length, 8);
@@ -1493,8 +1493,8 @@ namespace RogueLib::ROBN {
                 ROBN bytes;
                 bytes.resize(11);
                 bytes[0] = Type::Vector;
-                bytes[1] = std::uint8_t(
-                        Type::uInt64 | Endianness::NATIVE); // endianness doesnt matter because its zero
+                bytes[1] = std::uint8_t(Type::uInt64) |
+                           std::uint8_t(Endianness::NATIVE); // endianness doesnt matter because its zero
                 for (int i = 2; i < 11; ++i) {
                     bytes[i] = 0;
                 }
@@ -1508,7 +1508,7 @@ namespace RogueLib::ROBN {
                 auto* dataPtr = bytes.data();
 
                 dataPtr[0] = Type::Vector;
-                dataPtr[1] = std::uint8_t(Type::uInt64 | Endianness::NATIVE);
+                dataPtr[1] = std::uint8_t(Type::uInt64) | std::uint8_t(Endianness::NATIVE);
                 dataPtr += 2;
                 std::uint64_t length = val.size();
                 contiguousMemoryCopy(dataPtr, &length, 8);
@@ -1530,7 +1530,7 @@ namespace RogueLib::ROBN {
 //                }
 
                 // ok, so, lets see if the size is fixed so i can do pre-allocation
-                if (isFixedBinarySize < T > ()) {
+                if (isFixedBinarySize<T>()) {
                     bytes.resize(11 + typeBinarySize<T>() * val.size());
                 }
 
@@ -1547,7 +1547,7 @@ namespace RogueLib::ROBN {
                 requestBytes(11);
 
                 dataPtr[0] = Type::Vector;
-                dataPtr[1] = std::uint8_t(Type::uInt64 | Endianness::NATIVE);
+                dataPtr[1] = std::uint8_t(Type::uInt64) | std::uint8_t(Endianness::NATIVE);
                 dataPtr += 2;
                 std::uint64_t length = bytes.size();
                 contiguousMemoryCopy(dataPtr, &length, 8);
