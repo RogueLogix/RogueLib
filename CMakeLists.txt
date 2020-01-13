@@ -3,10 +3,10 @@ project(RogueLib)
 
 # because cmake wont do this for me...
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++2a")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++2a -stdlib=libc++")
 endif ()
 
-    set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 20)
 
 add_library(RogueLib_Include INTERFACE)
 target_include_directories(RogueLib_Include INTERFACE ${CMAKE_CURRENT_LIST_DIR})
@@ -76,8 +76,9 @@ add_subdirectory(boost-cmake)
 
 add_subdirectory(RogueLib/Exceptions)
 #add_subdirectory(RogueLib/Filesystem)
-add_subdirectory(RogueLib/GenericBinary)
+add_subdirectory(RogueLib/ROBN)
 add_subdirectory(RogueLib/Logging)
 add_subdirectory(RogueLib/Networking)
+add_subdirectory(RogueLib/NUMA)
 add_subdirectory(RogueLib/Scripting)
 add_subdirectory(RogueLib/Threading)
