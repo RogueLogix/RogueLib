@@ -58,7 +58,7 @@ std::unique_ptr<RogueLib::Exceptions::StackTraceRecorder> cubitStackTraceUnwindD
 
         std::string getStackTrace();
 
-        virtual const char* what() const _GLIBCXX_TXN_SAFE_DYN _GLIBCXX_NOTHROW;
+        virtual const char* what() const noexcept;
     };
 
     class Error : public ErrorBase {

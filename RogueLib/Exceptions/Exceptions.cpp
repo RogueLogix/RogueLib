@@ -61,7 +61,7 @@ namespace RogueLib::Exceptions {
         getStackTrace();
     }
 
-    const char* ErrorBase::what() const _GLIBCXX_TXN_SAFE_DYN _GLIBCXX_NOTHROW {
+    const char* ErrorBase::what() const noexcept {
         return printMessage.c_str();
     }
 
