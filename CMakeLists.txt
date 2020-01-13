@@ -4,9 +4,9 @@ project(RogueLib)
 # because cmake wont do this for me...
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++2a")
-else ()
-    set(CMAKE_CXX_STANDARD 20)
 endif ()
+
+    set(CMAKE_CXX_STANDARD 20)
 
 add_library(RogueLib_Include INTERFACE)
 target_include_directories(RogueLib_Include INTERFACE ${CMAKE_CURRENT_LIST_DIR})
