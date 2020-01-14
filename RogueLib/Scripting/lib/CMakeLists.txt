@@ -23,7 +23,7 @@ ExternalProject_Add(ClingBuild
         BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/cling/build"
         CMAKE_ARGS ${CMAKE_ARGS} -DLLVM_TARGETS_TO_BUILD=X86;PowerPC;ARM
         # i only need it to build clingInterpreter, as im not using anything else
-        BUILD_COMMAND ${CMAKE_COMMAND} -DCMAKE_CXX_FLAGS="${CMAKE_CXX_FLAGS}" -DCMAKE_C_FLAGS="${CMAKE_C_FLAGS}" --build ${CMAKE_CURRENT_BINARY_DIR}/cling/build --target libcling -- -j ${NPROC}
+        BUILD_COMMAND ${CMAKE_COMMAND} -DLLVM_TARGETS_TO_BUILD="host;NVPTX" -DCMAKE_CXX_FLAGS="${CMAKE_CXX_FLAGS}" -DCMAKE_C_FLAGS="${CMAKE_C_FLAGS}" --build ${CMAKE_CURRENT_BINARY_DIR}/cling/build --target libcling -- -j ${NPROC}
         UPDATE_COMMAND ""
         INSTALL_COMMAND ""
         )
