@@ -4,7 +4,7 @@ stages:
   - buildtests
   - test
 
-configure:
+cmake:
   stage: configure
   artifacts:
     paths:
@@ -17,7 +17,7 @@ configure:
 compile:Exceptions:
   stage: buildlibs
   dependencies:
-    - configure
+    - cmake
   script:
     - cd build
     - make -j $(nproc) RogueLib_Exceptions
@@ -25,7 +25,7 @@ compile:Exceptions:
 compile:Logging:
   stage: buildlibs
   dependencies:
-    - configure
+    - cmake
   script:
     - cd build
     - make -j $(nproc) RogueLib_Logging
@@ -33,7 +33,7 @@ compile:Logging:
 compile:Networking:
   stage: buildlibs
   dependencies:
-    - configure
+    - cmake
   script:
     - cd build
     - make -j $(nproc) RogueLib_Networking
@@ -41,7 +41,7 @@ compile:Networking:
 compile:Scripting:
   stage: buildlibs
   dependencies:
-    - configure
+    - cmake
   script:
     - chmod +x $(find ./RogueLib -name *.sh)
     - cd build
@@ -50,7 +50,7 @@ compile:Scripting:
 compile:Threading:
   stage: buildlibs
   dependencies:
-    - configure
+    - cmake
   script:
     - cd build
     - make -j $(nproc) RogueLib_Threading
