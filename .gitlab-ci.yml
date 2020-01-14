@@ -1,0 +1,2 @@
+configure:
+  script: "gitlab-ci/configure.sh"
