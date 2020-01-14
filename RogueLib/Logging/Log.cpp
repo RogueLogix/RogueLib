@@ -6,6 +6,7 @@
 #include <atomic>
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 
 
 //TODO: buffering
