@@ -1,12 +1,50 @@
 stages:
-  - build
+  - configure
+  - buildlibs
+  - buildtests
   - test
 
-build:
-  stage: build
+configure:
+  stage: configure
   artifacts:
     paths:
       - build
-  before_script:
-    - chmod +x gitlab-ci/*
-  script: "gitlab-ci/build.sh"
+  script:
+    - mkdir build
+    - cd build
+    - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=/llvm/llvm-project/build/bin/clang -DCMAKE_CXX_COMPILER=/llvm/llvm-project/build/bin/clang++ ../
+
+compile:Exceptions:
+  stage: buildlibs
+  dependencies:
+    - configure
+  script:
+    - make -j $(nproc) RogueLib_Exceptions
+
+compile:Logging:
+  stage: buildlibs
+  dependencies:
+    - configure
+  script:
+    - make -j $(nproc) RogueLib_Logging
+
+compile:Networking:
+  stage: buildlibs
+  dependencies:
+    - configure
+  script:
+    - make -j $(nproc) RogueLib_Networking
+
+compile:Scripting:
+  stage: buildlibs
+  dependencies:
+    - configure
+  script:
+    - make -j $(nproc) RogueLib_Scripting
+
+compile:Threading:
+  stage: buildlibs
+  dependencies:
+    - configure
+  script:
+    - make -j $(nproc) RogueLib_Threading
