@@ -43,8 +43,8 @@ compile:Scripting:
   dependencies:
     - configure
   script:
-    - cd build
     - chmod +x $(find ./RogueLib -name *.sh)
+    - cd build
     - make -j $(nproc) RogueLib_Scripting
 
 compile:Threading:
