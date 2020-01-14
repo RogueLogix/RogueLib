@@ -27,7 +27,7 @@ compile:Logging:
   dependencies:
     - configure
   script:
-    -  cd build
+    - cd build
     - make -j $(nproc) RogueLib_Logging
 
 compile:Networking:
@@ -35,7 +35,7 @@ compile:Networking:
   dependencies:
     - configure
   script:
-    -  cd build
+    - cd build
     - make -j $(nproc) RogueLib_Networking
 
 compile:Scripting:
@@ -43,7 +43,8 @@ compile:Scripting:
   dependencies:
     - configure
   script:
-    -  cd build
+    - cd build
+    - chmod +x $(find ./RogueLib -name *.sh)
     - make -j $(nproc) RogueLib_Scripting
 
 compile:Threading:
@@ -51,5 +52,5 @@ compile:Threading:
   dependencies:
     - configure
   script:
-    -  cd build
+    - cd build
     - make -j $(nproc) RogueLib_Threading
