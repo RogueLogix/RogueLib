@@ -14,6 +14,7 @@ endforeach ()
 
 include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 
+execute_process(COMMAND chmod +x ${CMAKE_CURRENT_LIST_DIR}/downloadCling.sh)
 execute_process(COMMAND nproc OUTPUT_VARIABLE NPROC)
 
 ExternalProject_Add(ClingBuild
