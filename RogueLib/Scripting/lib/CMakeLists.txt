@@ -11,7 +11,6 @@ foreach (CACHE_VAR ${CACHE_VARS})
         set(CMAKE_ARGS "${CMAKE_ARGS} -D${CACHE_VAR}${CACHE_VAR_TYPE}=\"${${CACHE_VAR}}\"")
     endif ()
 endforeach ()
-message("CMAKE_ARGS: ${CMAKE_ARGS}")
 
 include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 
@@ -25,9 +24,6 @@ ExternalProject_Add(ClingBuild
         UPDATE_COMMAND ""
         INSTALL_COMMAND ""
         )
-
-message("CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR}")
-message("CMAKE_CURRENT_LIST_DIR: ${CMAKE_CURRENT_LIST_DIR}")
 
 add_library(Cling INTERFACE)
 add_dependencies(Cling ClingBuild)
