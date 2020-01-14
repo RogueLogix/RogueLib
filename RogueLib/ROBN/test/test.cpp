@@ -1,7 +1,6 @@
 
 #define USING_ROGUELIB_GENERICBINARY
 
-#include <RogueLib/ROBN/ROBNMap.hpp>
 #include <RogueLib/ROBN/AutoSerializable.hpp>
 
 #include <iostream>
