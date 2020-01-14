@@ -1,21 +1,10 @@
 stages:
-  - configure
   - build
   - test
 
-configure:
-  stage: configure
-  cache:
-    paths:
-      - build
-  before_script:
-      - chmod +x gitlab-ci/*
-      - git submodule update --init --recursive
-  script: "gitlab-ci/configure.sh"
-
 build:
   stage: build
-  cache:
+  artifacts:
     paths:
       - build
   before_script:
