@@ -31,7 +31,7 @@ namespace RogueLib::Threading {
             std::unique_lock lk(queue->accessMutex);
             queue->queue.push_back(toEnqueue);
             queue->dequeueSemaphore.signal();
-        }, std::move(selfPtr.lock()), std::move(item)));
+        }, selfPtr.lock(), item));
         return item.event();
     }
 
@@ -147,7 +147,7 @@ namespace RogueLib::Threading {
                     lk.unlock();
                     item->readyEvent.trigger();
                 }
-            }, std::move(selfPtr.lock())));
+            },selfPtr.lock()));
         }
     }
 
