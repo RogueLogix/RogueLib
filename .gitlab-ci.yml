@@ -13,8 +13,10 @@ cmake:release:
   stage: configure
   artifacts:
     paths:
-      - boost_cmake
+      - boost-cmake
       - build
+  environment:
+    name: release
   script:
     - mkdir build
     - cd build
@@ -24,8 +26,10 @@ cmake:debug:
   stage: configure
   artifacts:
     paths:
-      - boost_cmake
+      - boost-cmake
       - build
+  environment:
+    name: debug
   script:
     - mkdir build
     - cd build
@@ -36,6 +40,8 @@ compile:Exceptions:release:
   stage: buildlibs
   dependencies:
     - cmake:release
+  environment:
+    name: release
   script:
     - cd build
     - make -j $(nproc) RogueLib_Exceptions
@@ -44,6 +50,8 @@ compile:Exceptions:debug:
   stage: buildlibs
   dependencies:
     - cmake:debug
+  environment:
+    name: debug
   script:
     - cd build
     - make -j $(nproc) RogueLib_Exceptions
@@ -53,6 +61,8 @@ compile:Logging:release:
   stage: buildlibs
   dependencies:
     - cmake:release
+  environment:
+    name: release
   script:
     - cd build
     - make -j $(nproc) RogueLib_Logging
@@ -61,6 +71,8 @@ compile:Logging:debug:
   stage: buildlibs
   dependencies:
     - cmake:debug
+  environment:
+    name: debug
   script:
     - cd build
     - make -j $(nproc) RogueLib_Logging
@@ -69,6 +81,8 @@ compile:Networking:release:
   stage: buildlibs
   dependencies:
     - cmake:release
+  environment:
+    name: release
   script:
     - cd build
     - make -j $(nproc) RogueLib_Networking
@@ -77,6 +91,8 @@ compile:Networking:debug:
   stage: buildlibs
   dependencies:
     - cmake:debug
+  environment:
+    name: debug
   script:
     - cd build
     - make -j $(nproc) RogueLib_Networking
@@ -85,6 +101,8 @@ compile:Scripting:release:
   stage: buildlibs
   dependencies:
     - cmake:release
+  environment:
+    name: release
   script:
     - chmod +x $(find ./RogueLib -name *.sh)
     - cd build
@@ -94,6 +112,8 @@ compile:Scripting:debug:
   stage: buildlibs
   dependencies:
     - cmake:debug
+  environment:
+    name: debug
   script:
     - chmod +x $(find ./RogueLib -name *.sh)
     - cd build
@@ -103,6 +123,8 @@ compile:Threading:release:
   stage: buildlibs
   dependencies:
     - cmake:release
+  environment:
+    name: release
   script:
     - cd build
     - make -j $(nproc) RogueLib_Threading
@@ -111,6 +133,8 @@ compile:Threading:debug:
   stage: buildlibs
   dependencies:
     - cmake:debug
+  environment:
+    name: debug
   script:
     - cd build
     - make -j $(nproc) RogueLib_Threading
