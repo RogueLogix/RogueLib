@@ -4,10 +4,16 @@ stages:
   - buildtests
   - test
 
+default:
+  before_script:
+    - git submodule sync --recursive
+    - git submodule update --init --recursive
+
 cmake:release:
   stage: configure
   artifacts:
     paths:
+      - boost_cmake
       - build
   script:
     - mkdir build
@@ -18,6 +24,7 @@ cmake:debug:
   stage: configure
   artifacts:
     paths:
+      - boost_cmake
       - build
   script:
     - mkdir build
