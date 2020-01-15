@@ -1304,7 +1304,7 @@ namespace RogueLib::ROBN {
             vector.resize(length);
 
             for (std::uint64_t i = 0; i < length; ++i) {
-                vector[i] = RogueLib::ROBN::fromROBN<T>(ptr, endPtr, type);
+                vector[i] = RogueLib::ROBN::fromROBN<T>(ptr, endPtr, valType);
             }
 
             return vector;
