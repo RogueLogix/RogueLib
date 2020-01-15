@@ -4,6 +4,9 @@ project(RogueLib)
 # because cmake wont do this for me...
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++2a -stdlib=libc++")
+    if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+    endif()
 endif ()
 
 set(CMAKE_CXX_STANDARD 20)
