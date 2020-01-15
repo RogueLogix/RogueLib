@@ -4,7 +4,7 @@ stages:
   - buildtests
   - test
 
-cmake:
+cmake:release:
   stage: configure
   artifacts:
     paths:
@@ -14,43 +14,96 @@ cmake:
     - cd build
     - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=/llvm/llvm-project/build/bin/clang -DCMAKE_CXX_COMPILER=/llvm/llvm-project/build/bin/clang++ ../
 
-compile:Exceptions:
+cmake:debug:
+  stage: configure
+  artifacts:
+    paths:
+      - build
+  script:
+    - mkdir build
+    - cd build
+    - cmake -DCMAKE_BUILD_TYPE=Debug-DCMAKE_C_COMPILER=/llvm/llvm-project/build/bin/clang -DCMAKE_CXX_COMPILER=/llvm/llvm-project/build/bin/clang++ ../
+
+
+compile:Exceptions:release:
   stage: buildlibs
   dependencies:
-    - cmake
+    - cmake:release
   script:
     - cd build
     - make -j $(nproc) RogueLib_Exceptions
 
-compile:Logging:
+compile:Exceptions:debug:
   stage: buildlibs
   dependencies:
-    - cmake
+    - cmake:debug
+  script:
+    - cd build
+    - make -j $(nproc) RogueLib_Exceptions
+
+
+compile:Logging:release:
+  stage: buildlibs
+  dependencies:
+    - cmake:release
   script:
     - cd build
     - make -j $(nproc) RogueLib_Logging
 
-compile:Networking:
+compile:Logging:debug:
   stage: buildlibs
   dependencies:
-    - cmake
+    - cmake:debug
+  script:
+    - cd build
+    - make -j $(nproc) RogueLib_Logging
+
+compile:Networking:release:
+  stage: buildlibs
+  dependencies:
+    - cmake:release
   script:
     - cd build
     - make -j $(nproc) RogueLib_Networking
 
-compile:Scripting:
+compile:Networking:debug:
   stage: buildlibs
   dependencies:
-    - cmake
+    - cmake:debug
+  script:
+    - cd build
+    - make -j $(nproc) RogueLib_Networking
+
+compile:Scripting:release:
+  stage: buildlibs
+  dependencies:
+    - cmake:release
   script:
     - chmod +x $(find ./RogueLib -name *.sh)
     - cd build
     - make -j $(nproc) RogueLib_Scripting
 
-compile:Threading:
+compile:Scripting:debug:
   stage: buildlibs
   dependencies:
-    - cmake
+    - cmake:debug
+  script:
+    - chmod +x $(find ./RogueLib -name *.sh)
+    - cd build
+    - make -j $(nproc) RogueLib_Scripting
+
+compile:Threading:release:
+  stage: buildlibs
+  dependencies:
+    - cmake:release
+  script:
+    - cd build
+    - make -j $(nproc) RogueLib_Threading
+
+compile:Threading:debug:
+  stage: buildlibs
+  dependencies:
+    - cmake:debug
   script:
     - cd build
     - make -j $(nproc) RogueLib_Threading
