@@ -7,96 +7,88 @@ stages:
 variables:
   C_COMPILER: /llvm/llvm-project/build/bin/clang
   CXX_COMPILER: /llvm/llvm-project/build/bin/clang++
-  CMAKE_COMMAND:  cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_C_COMPILER=$C_COMPILER -DCMAKE_CXX_COMPILER=$CXX_COMPILER ..
+  CMAKE_RELEASE: cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=$C_COMPILER -DCMAKE_CXX_COMPILER=$CXX_COMPILER ..
+  CMAKE_DEBUG: cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=$C_COMPILER -DCMAKE_CXX_COMPILER=$CXX_COMPILER ..
 
 compile:Exceptions:release:
   stage: buildlibs
   script:
-    - export BUILD_TYPE=Release
     - mkdir build
     - cd build
-    - eval $CMAKE_COMMAND
+    - eval $CMAKE_RELEASE
     - make -j $(nproc) RogueLib_Exceptions
 
 compile:Exceptions:debug:
   stage: buildlibs
   script:
-    - export BUILD_TYPE=Debug
     - mkdir build
     - cd build
-    - eval $CMAKE_COMMAND
+    - eval $CMAKE_DEBUG
     - make -j $(nproc) RogueLib_Exceptions
 
 
 compile:Logging:release:
   stage: buildlibs
   script:
-    - export BUILD_TYPE=Release
     - mkdir build
     - cd build
-    - eval $CMAKE_COMMAND
+    - eval $CMAKE_RELEASE
     - make -j $(nproc) RogueLib_Logging
 
 compile:Logging:debug:
   stage: buildlibs
   script:
-    - export BUILD_TYPE=Debug
     - mkdir build
     - cd build
-    - eval $CMAKE_COMMAND
+    - eval $CMAKE_DEBUG
     - make -j $(nproc) RogueLib_Logging
 
 compile:Networking:release:
   stage: buildlibs
   script:
-    - export BUILD_TYPE=Release
     - mkdir build
     - cd build
+    - eval $$CMAKE_RELEASE
     - make -j $(nproc) RogueLib_Networking
 
 compile:Networking:debug:
   stage: buildlibs
   script:
-    - export BUILD_TYPE=Debug
     - mkdir build
     - cd build
-    - eval $CMAKE_COMMAND
+    - eval $CMAKE_DEBUG
     - make -j $(nproc) RogueLib_Networking
 
 compile:Scripting:release:
   stage: buildlibs
   script:
-    - export BUILD_TYPE=Release
     - chmod +x $(find ./RogueLib -name *.sh)
     - mkdir build
     - cd build
-    - eval $CMAKE_COMMAND
+    - eval $CMAKE_RELEASE
     - make -j $(nproc) RogueLib_Scripting
 
 compile:Scripting:debug:
   stage: buildlibs
   script:
-    - export BUILD_TYPE=Debug
     - chmod +x $(find ./RogueLib -name *.sh)
     - mkdir build
     - cd build
-    - eval $CMAKE_COMMAND
+    - eval $CMAKE_DEBUG
     - make -j $(nproc) RogueLib_Scripting
 
 compile:Threading:release:
   stage: buildlibs
   script:
-    - export BUILD_TYPE=Release
     - mkdir build
     - cd build
-    - eval $CMAKE_COMMAND
+    - eval $CMAKE_RELEASE
     - make -j $(nproc) RogueLib_Threading
 
 compile:Threading:debug:
   stage: buildlibs
   script:
-    - export BUILD_TYPE=Debug
     - mkdir build
     - cd build
-    - eval $CMAKE_COMMAND
+    - eval $CMAKE_DEBUG
     - make -j $(nproc) RogueLib_Threading
