@@ -75,7 +75,7 @@ function(add_lib_dependency DEP_NAME)
     add_external_lib_dependency("RogueLib_${DEP_NAME}")
 endfunction()
 
-find_package(Boost 1.67 REQUIRED thread python filesystem unit_test_framework)
+find_package(Boost 1.67 REQUIRED thread python37 filesystem unit_test_framework)
 
 add_subdirectory(RogueLib/Exceptions)
 #add_subdirectory(RogueLib/Filesystem)
