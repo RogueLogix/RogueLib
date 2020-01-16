@@ -1,14 +1,8 @@
 stages:
-  - buildboost
   - configure
   - buildlibs
   - buildtests
   - test
-
-boost:
-  stage: buildboost
-  script:
-    - echo
 
 variables:
   C_COMPILER: /llvm/llvm-project/build/bin/clang
