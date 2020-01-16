@@ -48,7 +48,7 @@ compile:Networking:release:
   script:
     - mkdir build
     - cd build
-    - eval $$CMAKE_RELEASE
+    - eval $CMAKE_RELEASE
     - make -j $(nproc) RogueLib_Networking
 
 compile:Networking:debug:
