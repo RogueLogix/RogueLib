@@ -14,7 +14,7 @@ namespace RogueLib::Threading{
     }
 
     DestructorCallback& DestructorCallback::operator=(std::function<void()> function) {
-        function = std::move(function);
+        this->function = std::move(function);
         return *this;
     }
 }
