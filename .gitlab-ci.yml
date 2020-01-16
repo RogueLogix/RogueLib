@@ -1,140 +1,108 @@
 stages:
+  - buildboost
   - configure
   - buildlibs
   - buildtests
   - test
 
-default:
-  before_script:
-    - git submodule sync --recursive
-    - git submodule update --init --recursive
-
-cmake:release:
-  stage: configure
-  artifacts:
-    paths:
-      - boost-cmake
-      - build
-  environment:
-    name: release
+boost:
+  stage: buildboost
   script:
-    - mkdir build
-    - cd build
-    - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=/llvm/llvm-project/build/bin/clang -DCMAKE_CXX_COMPILER=/llvm/llvm-project/build/bin/clang++ ../
+    - echo
 
-cmake:debug:
-  stage: configure
-  artifacts:
-    paths:
-      - boost-cmake
-      - build
-  environment:
-    name: debug
-  script:
-    - mkdir build
-    - cd build
-    - cmake -DCMAKE_BUILD_TYPE=Debug-DCMAKE_C_COMPILER=/llvm/llvm-project/build/bin/clang -DCMAKE_CXX_COMPILER=/llvm/llvm-project/build/bin/clang++ ../
-
+variables:
+  C_COMPILER: /llvm/llvm-project/build/bin/clang
+  CXX_COMPILER: /llvm/llvm-project/build/bin/clang++
+  CMAKE_COMMAND:  cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPU -DCMAKE_C_COMPILER=$C_COMPILER -DCMAKE_CXX_COMPILER=$CXX_COMPILER ..
 
 compile:Exceptions:release:
   stage: buildlibs
-  dependencies:
-    - cmake:release
-  environment:
-    name: release
   script:
+    - export BUILD_TYPE=Release
+    - mkdir build
     - cd build
+    - eval $CMAKE_COMMAND
     - make -j $(nproc) RogueLib_Exceptions
 
 compile:Exceptions:debug:
   stage: buildlibs
-  dependencies:
-    - cmake:debug
-  environment:
-    name: debug
   script:
+    - export BUILD_TYPE=Debug
+    - mkdir build
     - cd build
+    - eval $CMAKE_COMMAND
     - make -j $(nproc) RogueLib_Exceptions
 
 
 compile:Logging:release:
   stage: buildlibs
-  dependencies:
-    - cmake:release
-  environment:
-    name: release
   script:
+    - export BUILD_TYPE=Release
+    - mkdir build
     - cd build
+    - eval $CMAKE_COMMAND
     - make -j $(nproc) RogueLib_Logging
 
 compile:Logging:debug:
   stage: buildlibs
-  dependencies:
-    - cmake:debug
-  environment:
-    name: debug
   script:
+    - export BUILD_TYPE=Debug
+    - mkdir build
     - cd build
+    - eval $CMAKE_COMMAND
     - make -j $(nproc) RogueLib_Logging
 
 compile:Networking:release:
   stage: buildlibs
-  dependencies:
-    - cmake:release
-  environment:
-    name: release
   script:
+    - export BUILD_TYPE=Release
+    - mkdir build
     - cd build
     - make -j $(nproc) RogueLib_Networking
 
 compile:Networking:debug:
   stage: buildlibs
-  dependencies:
-    - cmake:debug
-  environment:
-    name: debug
   script:
+    - export BUILD_TYPE=Debug
+    - mkdir build
     - cd build
+    - eval $CMAKE_COMMAND
     - make -j $(nproc) RogueLib_Networking
 
 compile:Scripting:release:
   stage: buildlibs
-  dependencies:
-    - cmake:release
-  environment:
-    name: release
   script:
+    - export BUILD_TYPE=Release
     - chmod +x $(find ./RogueLib -name *.sh)
+    - mkdir build
     - cd build
+    - eval $CMAKE_COMMAND
     - make -j $(nproc) RogueLib_Scripting
 
 compile:Scripting:debug:
   stage: buildlibs
-  dependencies:
-    - cmake:debug
-  environment:
-    name: debug
   script:
+    - export BUILD_TYPE=Debug
     - chmod +x $(find ./RogueLib -name *.sh)
+    - mkdir build
     - cd build
+    - eval $CMAKE_COMMAND
     - make -j $(nproc) RogueLib_Scripting
 
 compile:Threading:release:
   stage: buildlibs
-  dependencies:
-    - cmake:release
-  environment:
-    name: release
   script:
+    - export BUILD_TYPE=Release
+    - mkdir build
     - cd build
+    - eval $CMAKE_COMMAND
     - make -j $(nproc) RogueLib_Threading
 
 compile:Threading:debug:
   stage: buildlibs
-  dependencies:
-    - cmake:debug
-  environment:
-    name: debug
   script:
+    - export BUILD_TYPE=Debug
+    - mkdir build
     - cd build
+    - eval $CMAKE_COMMAND
     - make -j $(nproc) RogueLib_Threading
