@@ -228,6 +228,11 @@ namespace RogueLib::ROBN {
 #if defined(GB_LITTLE_ENDIAN)
             LITTLE
 #elif defined(GB_BIG_ENDIAN)
+            // while big endian systems should work find, they have not been tested
+            // if you are using this on a big endian system, i recommend you run the test suite which should
+            // give you an idea of if it works or not
+            // big endian decoding on little endian systems has been tested
+    #error BIG ENDIAN UNTESTED
             BIG
 #else
 #error Unsupported Endianness
@@ -1530,7 +1535,7 @@ namespace RogueLib::ROBN {
 //                }
 
                 // ok, so, lets see if the size is fixed so i can do pre-allocation
-                if (isFixedBinarySize<T>()) {
+                if (isFixedBinarySize < T > ()) {
                     bytes.resize(11 + typeBinarySize<T>() * val.size());
                 }
 
