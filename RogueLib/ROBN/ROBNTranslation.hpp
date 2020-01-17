@@ -286,7 +286,7 @@ namespace RogueLib::ROBN {
     template<typename T>
     constexpr T correctEndianness(T val, Endianness endianness) {
         if (endianness != Endianness::NATIVE) {
-            swapEndianness(val);
+            return swapEndianness(val);
         }
         return val;
     }
