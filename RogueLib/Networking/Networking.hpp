@@ -109,11 +109,13 @@ namespace RogueLib::Networking {
             // size checks
             if (
                     weight != other.weight ||
+                    speed != other.speed ||
                     ipv4Addresses.size() != other.ipv4Addresses.size() ||
                     ipv6Addresses.size() != other.ipv6Addresses.size() ||
                     domains.size() != other.domains.size() ||
                     ports.size() != other.ports.size() ||
-                    services.size() != other.services.size()
+                    services.size() != other.services.size() ||
+                    this->isInfiniband != other.isInfiniband
                     ) {
                 return false;
             }
