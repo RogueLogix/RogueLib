@@ -21,7 +21,9 @@ namespace RogueLib::Networking {
         COMPRESS = 1u << 4u,
         NO_ENCRYPT = 1u << 5u,
         ENCRYPT = 1u << 6u,
-        RESERVED = static_cast<std::uint16_t>(uint16_t(-1) << 6)
+        SPLIT = 1u << 7u,
+        NO_SPLIT = 1u << 8u,
+        RESERVED = static_cast<std::uint16_t>(std::uint16_t(-1) << 8u)
     };
 
     class Channel {
@@ -34,7 +36,11 @@ namespace RogueLib::Networking {
         std::shared_ptr<IMPL> impl;
 
     public:
-        virtual void send(std::vector<std::uint8_t>& data, SendFlags flags);
+        void send(std::vector<std::uint8_t>& data, SendFlags flags);
+
+        void send(std::vector<std::uint8_t>& data) {
+            send(data, defaultFlags());
+        }
 
         /**
          * function is called when data is received with each data block
@@ -43,23 +49,10 @@ namespace RogueLib::Networking {
          * holding the thread is fine, callback handler will spawn a new one as needed
          */
         virtual void setDataCallback(std::function<void(std::vector<std::uint8_t>)> function);
-    };
 
-    // todo
-    /**
-     * sits on top of a channel and encrypts that traffic
-     */
-    class Encryptor : public Channel {
+        void setDefaultSendFlags(SendFlags defaultFlags);
 
-    };
-
-    // todo
-    /**
-     * for when you use multiple sockets, and send large blocks of data, i can break that for you
-     */
-    class PacketSplitter : public Channel {
-    public:
-
+        SendFlags defaultFlags();
     };
 
     // todo
