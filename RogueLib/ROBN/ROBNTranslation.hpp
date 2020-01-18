@@ -75,7 +75,9 @@
 
         #include <tmmintrin.h>
     #else
-        #warning No vector instructions with specialzed code available, you are probably compiling without an arch option, add -march=native
+        #ifndef RL_NO_VECTOR_MISSING_WARNING
+            #warning No vector instructions with specialzed code available
+        #endif
     #endif
 
 #endif
@@ -127,7 +129,7 @@ namespace RogueLib::ROBN {
             SublistStart = 123, // '{' 0x7B
             SublistElementCount = 124, // '|' 0x7C
             SublistEnd = 125, // '}' 0x7D
-            SublistSize = 125, // '~' 0x7E
+            SublistSize = 126, // '~' 0x7E
         };
     }
     typedef NS_ENUM_TYPE::Type Type;
