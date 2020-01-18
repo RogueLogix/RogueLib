@@ -31,12 +31,8 @@ namespace RogueLib::Networking {
         public:
             enum class UnderlyingType {
                 TCP_IP = 1,
-                // you may be wondering what the difference is here
-                // first one ensures
-                UDP_IP = 2,
-                UDP_LOSSY_IP = 3,
-                INFINIBAND_RDMA = 4,
-                LINUX_SHARED_MEMORY = 5,
+//                INFINIBAND_RDMA = 2,
+//                LINUX_SHARED_MEMORY = 3,
             };
 
             UnderlyingType underlyingType();
