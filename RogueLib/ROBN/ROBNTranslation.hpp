@@ -594,7 +594,7 @@ namespace RogueLib::ROBN {
                     std::memcpy(vector.data(), ptr, length * sizeof(T));
                 } else {
                     // fuck, i need to swap the endianness,
-                    
+
                     // with clang 11 using -march=native
                     // and a release mode -O3 -march=natvei libc++
                     // this is faster than using intrinsics
@@ -764,7 +764,7 @@ namespace RogueLib::ROBN {
                 throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
             }
             map.insert(fromROBN<std::pair<KT, MT>>
-            (ptr, endPtr, Type::Pair));
+                               (ptr, endPtr, Type::Pair));
         }
 
         return map;
@@ -801,30 +801,6 @@ namespace RogueLib::ROBN {
             return RogueLib::ROBN::fromROBN<T>(ptr, endPtr, type);
         }
     };
-
-    template<typename T>
-    constexpr std::uint64_t findVectorTreeSize(T a) {
-        return 0;
-    };
-
-    template<typename T, typename A>
-    constexpr std::uint64_t findVectorTreeSize(std::vector<T, A>& vector) {
-        if (isFixedBinarySize<T>()) {
-            return typeBinarySize<T>() * vector.size();
-        }
-        if (is_std_vector<T>()) {
-            std::uint64_t size = 11;
-            for (auto& e : vector) {
-                auto subTreeSize = findVectorTreeSize(e);
-                if (!subTreeSize) {
-                    return 0;
-                }
-                size += subTreeSize;
-            }
-            return size;
-        }
-        return 0;
-    }
 
     // special case for boolean because it can be stored as packed values, so .data() doesnt work
     template<typename A>
