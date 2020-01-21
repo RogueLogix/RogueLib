@@ -590,9 +590,7 @@ namespace RogueLib::ROBN {
                     std::memcpy(vector.data(), ptr, length * sizeof(T));
                 } else {
                     // fuck, i need to swap the endianness,
-                    auto bytesLeft = length * sizeof(T);
-                    auto* outPtr = (std::uint8_t*) vector.data();
-
+                    
                     // with clang 11 using -march=native
                     // and a release mode -O3 -march=natvei libc++
                     // this is faster than using intrinsics
