@@ -63,6 +63,8 @@ static_assert(sizeof(double) == 8);
 //todo update this with C++23, so there isn't any more undefined/implementation defined behavior
 namespace RogueLib::ROBN {
 
+    #define ROGUELIB_UNUSED(x) (void)(x)
+
     typedef std::vector<uint8_t> ROBN;
 
     namespace NS_ENUM_TYPE {
@@ -295,6 +297,7 @@ namespace RogueLib::ROBN {
             (std::is_integral<NT>::value || std::is_floating_point<NT>::value) &&
             (std::is_integral<OT>::value || std::is_floating_point<OT>::value)), int> = 0>
     std::vector<NT> castVector(std::vector<OT> vector) {
+        ROGUELIB_UNUSED(vector);
         return {};
     }
 
@@ -477,7 +480,8 @@ namespace RogueLib::ROBN {
     }
 
     template<typename T>
-    inline T returnTypeBS(std::string arag) {
+    inline T returnTypeBS(std::string arg) {
+        ROGUELIB_UNUSED(arg);
         return {};
     }
 
