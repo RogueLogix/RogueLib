@@ -758,12 +758,12 @@ namespace RogueLib::ROBN {
         }
 
         Type lengthType = static_cast<Type>(*ptr++);
-        auto length = fromROBN < std::uint64_t > (ptr, endPtr, lengthType);
+        auto length = fromROBN<std::uint64_t>(ptr, endPtr, lengthType);
         for (std::uint64_t i = 0; i < length; ++i) {
             if (ptr >= endPtr || *ptr++ != Type::Pair) {
                 throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
             }
-            map.insert(fromROBN < std::pair<KT, MT>>
+            map.insert(fromROBN<std::pair<KT, MT>>
             (ptr, endPtr, Type::Pair));
         }
 
