@@ -54,35 +54,6 @@
 #error Unknown and unsupported archtecture
 #endif
 
-#ifdef X64
-
-    #ifdef __AVX__
-
-        #define X64_AVX
-
-        #if __has_include("FastMemCpyAVX.h")
-            #define X64_AVX_MEMCPY
-
-            #include "FastMemCpyAVX.h"
-
-        #endif
-
-        #ifdef __AVX2__
-            #define X64_AVX2
-        #endif
-    #elif defined(__SSSE3__)
-        #define x64_SSSE3
-
-        #include <tmmintrin.h>
-    #else
-        #ifndef RL_NO_VECTOR_MISSING_WARNING
-            #warning No vector instructions with specialzed code available
-        #endif
-    #endif
-
-#endif
-
-
 // make sure these are the correct sizes
 static_assert(CHAR_BIT == 8);
 static_assert(sizeof(float) == 4);
@@ -92,14 +63,6 @@ static_assert(sizeof(double) == 8);
 namespace RogueLib::ROBN {
 
     typedef std::vector<uint8_t> ROBN;
-
-    inline void contiguousMemoryCopy(void* dst, const void* src, std::uint64_t size) {
-        #ifdef X64_AVX_MEMCPY
-        memcpy_fast(dst, src, size);
-        #else
-        memcpy(dst, src, size);
-        #endif
-    }
 
     namespace NS_ENUM_TYPE {
         /* WARNING: 121 type max (1-122)
@@ -320,7 +283,7 @@ namespace RogueLib::ROBN {
         ROBN bytes;
         bytes.resize(sizeof(val) + 1);
         bytes[0] = primitiveTypeID<T>();
-        contiguousMemoryCopy(bytes.data() + 1, &val, sizeof(val));
+        std::memcpy(bytes.data() + 1, &val, sizeof(val));
         return bytes;
     }
 
@@ -370,7 +333,7 @@ namespace RogueLib::ROBN {
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
-                contiguousMemoryCopy(&tempval, ptr, 1);
+                std::memcpy(&tempval, ptr, 1);
                 ptr++;
                 return tempval;
             }
@@ -379,7 +342,7 @@ namespace RogueLib::ROBN {
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
-                contiguousMemoryCopy(&tempval, ptr, sizeof(tempval));
+                std::memcpy(&tempval, ptr, sizeof(tempval));
                 ptr += sizeof(tempval);
                 return correctEndianness(tempval, typeEndianness(type));
             }
@@ -388,7 +351,7 @@ namespace RogueLib::ROBN {
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
-                contiguousMemoryCopy(&tempval, ptr, sizeof(tempval));
+                std::memcpy(&tempval, ptr, sizeof(tempval));
                 ptr += sizeof(tempval);
                 return correctEndianness(tempval, typeEndianness(type));
             }
@@ -397,7 +360,7 @@ namespace RogueLib::ROBN {
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
-                contiguousMemoryCopy(&tempval, ptr, sizeof(tempval));
+                std::memcpy(&tempval, ptr, sizeof(tempval));
                 ptr += sizeof(tempval);
                 return correctEndianness(tempval, typeEndianness(type));
             }
@@ -406,7 +369,7 @@ namespace RogueLib::ROBN {
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
-                contiguousMemoryCopy(&tempval, ptr, sizeof(tempval));
+                std::memcpy(&tempval, ptr, sizeof(tempval));
                 ptr += sizeof(tempval);
                 return correctEndianness(tempval, typeEndianness(type));
             }
@@ -421,7 +384,7 @@ namespace RogueLib::ROBN {
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
-                contiguousMemoryCopy(&tempval, ptr, sizeof(tempval));
+                std::memcpy(&tempval, ptr, sizeof(tempval));
                 ptr += sizeof(tempval);
                 return correctEndianness(tempval, typeEndianness(type));
             }
@@ -430,7 +393,7 @@ namespace RogueLib::ROBN {
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
-                contiguousMemoryCopy(&tempval, ptr, sizeof(tempval));
+                std::memcpy(&tempval, ptr, sizeof(tempval));
                 ptr += sizeof(tempval);
                 return correctEndianness(tempval, typeEndianness(type));
             }
@@ -439,7 +402,7 @@ namespace RogueLib::ROBN {
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
-                contiguousMemoryCopy(&tempval, ptr, sizeof(tempval));
+                std::memcpy(&tempval, ptr, sizeof(tempval));
                 ptr += sizeof(tempval);
                 return correctEndianness(tempval, typeEndianness(type));
             }
@@ -448,7 +411,7 @@ namespace RogueLib::ROBN {
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
-                contiguousMemoryCopy(&tempval, ptr, sizeof(tempval));
+                std::memcpy(&tempval, ptr, sizeof(tempval));
                 ptr += sizeof(tempval);
                 return correctEndianness(tempval, typeEndianness(type));
             }
@@ -457,7 +420,7 @@ namespace RogueLib::ROBN {
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
-                contiguousMemoryCopy(&tempval, ptr, sizeof(tempval));
+                std::memcpy(&tempval, ptr, sizeof(tempval));
                 ptr += sizeof(tempval);
                 return correctEndianness(tempval, typeEndianness(type));
             }
@@ -466,7 +429,7 @@ namespace RogueLib::ROBN {
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
-                contiguousMemoryCopy(&tempval, ptr, sizeof(tempval));
+                std::memcpy(&tempval, ptr, sizeof(tempval));
                 ptr += sizeof(tempval);
                 return correctEndianness(tempval, typeEndianness(type));
             }
@@ -612,7 +575,7 @@ namespace RogueLib::ROBN {
         if (std::is_integral<T>::value || std::is_floating_point<T>::value) {
             checkPtr(1);
             Type lengthType = static_cast<Type>(*ptr++);
-            auto length = fromROBN < std::uint64_t > (ptr, endPtr, lengthType);
+            auto length = fromROBN<std::uint64_t>(ptr, endPtr, lengthType);
             checkPtr(1);
             Type valType = static_cast<Type>(*ptr++);
             std::vector<T> vector;
@@ -622,602 +585,26 @@ namespace RogueLib::ROBN {
                 checkPtr(length * sizeof(T));
                 // if its identical to the host representation then its only a memory copy
                 if (sizeof(T) == 1 || typeEndianness(valType) == Endianness::NATIVE) {
-                    auto bytesLeft = length * sizeof(T);
-                    auto* outPtr = (std::uint8_t*) vector.data();
-    #ifdef X64
-        #ifdef __AVX__
-
-                    if (bytesLeft >= 256) {
-                        size_t padding = (32 - (((size_t) outPtr) & 31)) & 31;
-
-                        __m256i head = _mm256_loadu_si256((const __m256i*) ptr);
-                        _mm256_storeu_si256((__m256i*) outPtr, head);
-                        ptr += padding;
-                        outPtr += padding;
-                        bytesLeft -= padding;
-
-                        auto* inavxPtr = ((const __m256i_u*) ptr);
-                        auto* outavxPtr = ((__m256i*) outPtr);
-
-                        _mm_prefetch((const char*) (inavxPtr), _MM_HINT_NTA);
-
-                        while (bytesLeft >= 256) {
-                            bytesLeft -= 256;
-
-                            __m256i_u c0, c1, c2, c3, c4, c5, c6, c7;
-
-                            c0 = _mm256_loadu_si256(inavxPtr + 0);
-                            c1 = _mm256_loadu_si256(inavxPtr + 1);
-                            c2 = _mm256_loadu_si256(inavxPtr + 2);
-                            c3 = _mm256_loadu_si256(inavxPtr + 3);
-                            c4 = _mm256_loadu_si256(inavxPtr + 4);
-                            c5 = _mm256_loadu_si256(inavxPtr + 5);
-                            c6 = _mm256_loadu_si256(inavxPtr + 6);
-                            c7 = _mm256_loadu_si256(inavxPtr + 7);
-                            _mm_prefetch((const char*) (inavxPtr + 512), _MM_HINT_NTA);
-                            inavxPtr += 8;
-
-                            _mm256_stream_si256(outavxPtr + 0, c0);
-                            _mm256_stream_si256(outavxPtr + 1, c1);
-                            _mm256_stream_si256(outavxPtr + 2, c2);
-                            _mm256_stream_si256(outavxPtr + 3, c3);
-                            _mm256_stream_si256(outavxPtr + 4, c4);
-                            _mm256_stream_si256(outavxPtr + 5, c5);
-                            _mm256_stream_si256(outavxPtr + 6, c6);
-                            _mm256_stream_si256(outavxPtr + 7, c7);
-                            outavxPtr += 8;
-                        }
-
-                        _mm_sfence();
-
-                        ptr = (uint8_t*) inavxPtr;
-                        outPtr = (uint8_t*) outavxPtr;
-
-                        // because there could be SSE elsewhere, and i dont want to cause a penality there
-                        _mm256_zeroupper();
-                    }
-        #elif defined(__SSSE3__)
-                    if(bytesLeft >= 128) {
-                            size_t padding = (16 - (((size_t) outPtr) & 15)) & 15;
-
-                            __m128i_u head = _mm_loadu_si128((const __m128i_u*) ptr);
-                            _mm_store_si128((__m128i_u*) outPtr, head);
-                            ptr += padding;
-                            outPtr += padding;
-                            bytesLeft -= padding;
-
-                            auto* inSSSEPtr = ((const __m128i_u*) ptr);
-                            auto* outSSSEPtr = ((__m128i*) outPtr);
-
-                            _mm_prefetch((const char*) (inSSSEPtr), _MM_HINT_NTA);
-
-                            while (bytesLeft >= 128) {
-                                bytesLeft -= 128;
-
-                                __m128i c0, c1, c2, c3, c4, c5, c6, c7;
-
-                                c0 = _mm_loadu_si128(inSSSEPtr + 0);
-                                c1 = _mm_loadu_si128(inSSSEPtr + 1);
-                                c2 = _mm_loadu_si128(inSSSEPtr + 2);
-                                c3 = _mm_loadu_si128(inSSSEPtr + 3);
-                                c4 = _mm_loadu_si128(inSSSEPtr + 4);
-                                c5 = _mm_loadu_si128(inSSSEPtr + 5);
-                                c6 = _mm_loadu_si128(inSSSEPtr + 6);
-                                c7 = _mm_loadu_si128(inSSSEPtr + 7);
-                                _mm_prefetch((const char*) (inSSSEPtr + 256), _MM_HINT_NTA);
-                                inSSSEPtr += 8;
-
-                                _mm_stream_si128(outSSSEPtr + 0, c0);
-                                _mm_stream_si128(outSSSEPtr + 1, c1);
-                                _mm_stream_si128(outSSSEPtr + 2, c2);
-                                _mm_stream_si128(outSSSEPtr + 3, c3);
-                                _mm_stream_si128(outSSSEPtr + 4, c4);
-                                _mm_stream_si128(outSSSEPtr + 5, c5);
-                                _mm_stream_si128(outSSSEPtr + 6, c6);
-                                _mm_stream_si128(outSSSEPtr + 7, c7);
-                                outSSSEPtr += 8;
-                            }
-                            _mm_sfence();
-                            ptr = (uint8_t*) inSSSEPtr;
-                            outPtr = (uint8_t*) outSSSEPtr;
-                        }
-
-        #endif
-    #endif
-                    contiguousMemoryCopy(outPtr, ptr, bytesLeft);
+                    std::memcpy(vector.data(), ptr, length * sizeof(T));
                 } else {
                     // fuck, i need to swap the endianness,
                     auto bytesLeft = length * sizeof(T);
                     auto* outPtr = (std::uint8_t*) vector.data();
 
-                    // i use a lot of intrinsics for this because *speed*
-    #ifdef X64
-        #ifdef __AVX2__
-                    if (bytesLeft >= 256) {
-                        __m256i shuffleMask = {};
-                        // this is compile time, or at least should be
-                        if (sizeof(T) == 2) {
-                            auto* maskPtr = reinterpret_cast<uint8_t*>(&shuffleMask);
-
-                            // performs 16 bit endianness reverse
-                            maskPtr[0] = 0x01;
-                            maskPtr[1] = 0x00;
-                            maskPtr[2] = 0x03;
-                            maskPtr[3] = 0x02;
-                            maskPtr[4] = 0x05;
-                            maskPtr[5] = 0x04;
-                            maskPtr[6] = 0x07;
-                            maskPtr[7] = 0x06;
-                            maskPtr[8] = 0x09;
-                            maskPtr[9] = 0x08;
-                            maskPtr[10] = 0x0B;
-                            maskPtr[11] = 0x0A;
-                            maskPtr[12] = 0x0D;
-                            maskPtr[13] = 0x0C;
-                            maskPtr[14] = 0x0F;
-                            maskPtr[15] = 0x0E;
-                            maskPtr[16] = 0x01;
-                            maskPtr[17] = 0x00;
-                            maskPtr[18] = 0x03;
-                            maskPtr[19] = 0x02;
-                            maskPtr[20] = 0x05;
-                            maskPtr[21] = 0x04;
-                            maskPtr[22] = 0x07;
-                            maskPtr[23] = 0x06;
-                            maskPtr[24] = 0x09;
-                            maskPtr[25] = 0x08;
-                            maskPtr[26] = 0x0B;
-                            maskPtr[27] = 0x0A;
-                            maskPtr[28] = 0x0D;
-                            maskPtr[29] = 0x0C;
-                            maskPtr[30] = 0x0F;
-                            maskPtr[31] = 0x0E;
-                        }
-                        if (sizeof(T) == 4) {
-                            auto* maskPtr = reinterpret_cast<uint8_t*>(&shuffleMask);
-
-                            // performs 32 bit endianness reverse
-                            maskPtr[0] = 0x03;
-                            maskPtr[1] = 0x02;
-                            maskPtr[2] = 0x01;
-                            maskPtr[3] = 0x00;
-                            maskPtr[4] = 0x07;
-                            maskPtr[5] = 0x06;
-                            maskPtr[6] = 0x05;
-                            maskPtr[7] = 0x04;
-                            maskPtr[8] = 0x0B;
-                            maskPtr[9] = 0x0A;
-                            maskPtr[10] = 0x09;
-                            maskPtr[11] = 0x08;
-                            maskPtr[12] = 0x0F;
-                            maskPtr[13] = 0x0E;
-                            maskPtr[14] = 0x0D;
-                            maskPtr[15] = 0x0C;
-                            maskPtr[16] = 0x03;
-                            maskPtr[17] = 0x02;
-                            maskPtr[18] = 0x01;
-                            maskPtr[19] = 0x00;
-                            maskPtr[20] = 0x07;
-                            maskPtr[21] = 0x06;
-                            maskPtr[22] = 0x05;
-                            maskPtr[23] = 0x04;
-                            maskPtr[24] = 0x0B;
-                            maskPtr[25] = 0x0A;
-                            maskPtr[26] = 0x09;
-                            maskPtr[27] = 0x08;
-                            maskPtr[28] = 0x0F;
-                            maskPtr[29] = 0x0E;
-                            maskPtr[30] = 0x0D;
-                            maskPtr[31] = 0x0C;
-                        }
-                        if (sizeof(T) == 8) {
-                            auto* maskPtr = reinterpret_cast<uint8_t*>(&shuffleMask);
-
-                            // performs 64 bit endianness reverse
-                            maskPtr[0] = 0x07;
-                            maskPtr[1] = 0x06;
-                            maskPtr[2] = 0x05;
-                            maskPtr[3] = 0x04;
-                            maskPtr[4] = 0x03;
-                            maskPtr[5] = 0x02;
-                            maskPtr[6] = 0x01;
-                            maskPtr[7] = 0x00;
-                            maskPtr[8] = 0x0F;
-                            maskPtr[9] = 0x0E;
-                            maskPtr[10] = 0x0D;
-                            maskPtr[11] = 0x0C;
-                            maskPtr[12] = 0x0B;
-                            maskPtr[13] = 0x0A;
-                            maskPtr[14] = 0x09;
-                            maskPtr[15] = 0x08;
-                            maskPtr[16] = 0x07;
-                            maskPtr[17] = 0x06;
-                            maskPtr[18] = 0x05;
-                            maskPtr[19] = 0x04;
-                            maskPtr[20] = 0x03;
-                            maskPtr[21] = 0x02;
-                            maskPtr[22] = 0x01;
-                            maskPtr[23] = 0x00;
-                            maskPtr[24] = 0x0F;
-                            maskPtr[25] = 0x0E;
-                            maskPtr[26] = 0x0D;
-                            maskPtr[27] = 0x0C;
-                            maskPtr[28] = 0x0B;
-                            maskPtr[29] = 0x0A;
-                            maskPtr[30] = 0x09;
-                            maskPtr[31] = 0x08;
-                        }
-
-                        if (sizeof(T) == 16) {
-                            auto* maskPtr = reinterpret_cast<uint8_t*>(&shuffleMask);
-
-                            // performs 128 bit endianness reverse
-                            maskPtr[0] = 0x0F;
-                            maskPtr[1] = 0x0E;
-                            maskPtr[2] = 0x0D;
-                            maskPtr[3] = 0x0C;
-                            maskPtr[4] = 0x0B;
-                            maskPtr[5] = 0x0A;
-                            maskPtr[6] = 0x09;
-                            maskPtr[7] = 0x08;
-                            maskPtr[8] = 0x07;
-                            maskPtr[9] = 0x06;
-                            maskPtr[10] = 0x05;
-                            maskPtr[11] = 0x04;
-                            maskPtr[12] = 0x03;
-                            maskPtr[13] = 0x02;
-                            maskPtr[14] = 0x01;
-                            maskPtr[15] = 0x00;
-                            maskPtr[16] = 0x0F;
-                            maskPtr[17] = 0x0E;
-                            maskPtr[18] = 0x0D;
-                            maskPtr[19] = 0x0C;
-                            maskPtr[20] = 0x0B;
-                            maskPtr[21] = 0x0A;
-                            maskPtr[22] = 0x09;
-                            maskPtr[23] = 0x08;
-                            maskPtr[24] = 0x07;
-                            maskPtr[25] = 0x06;
-                            maskPtr[26] = 0x05;
-                            maskPtr[27] = 0x04;
-                            maskPtr[28] = 0x03;
-                            maskPtr[29] = 0x02;
-                            maskPtr[30] = 0x01;
-                            maskPtr[31] = 0x00;
-                        }
-
-
-
-                        // allows me to write to the first aligned output section
-
-                        size_t padding = (32 - (((size_t) outPtr) & 31)) & 31;
-
-                        // check to make sure that we *can* align the memory
-                        if (padding % sizeof(T) == 0) {
-
-                            __m256i head = _mm256_loadu_si256((const __m256i*) ptr);
-                            head = _mm256_shuffle_epi8(head, shuffleMask);
-                            _mm256_storeu_si256((__m256i*) outPtr, head);
-                            ptr += padding;
-                            outPtr += padding;
-                            bytesLeft -= padding;
-
-                            auto* inavxPtr = ((const __m256i_u*) ptr);
-                            auto* outavxPtr = ((__m256i*) outPtr);
-
-                            _mm_prefetch((const char*) (inavxPtr), _MM_HINT_NTA);
-
-                            while (bytesLeft >= 256) {
-                                bytesLeft -= 256;
-
-                                __m256i_u c0, c1, c2, c3, c4, c5, c6, c7;
-
-                                c0 = _mm256_loadu_si256(inavxPtr + 0);
-                                c1 = _mm256_loadu_si256(inavxPtr + 1);
-                                c2 = _mm256_loadu_si256(inavxPtr + 2);
-                                c3 = _mm256_loadu_si256(inavxPtr + 3);
-                                c4 = _mm256_loadu_si256(inavxPtr + 4);
-                                c5 = _mm256_loadu_si256(inavxPtr + 5);
-                                c6 = _mm256_loadu_si256(inavxPtr + 6);
-                                c7 = _mm256_loadu_si256(inavxPtr + 7);
-                                _mm_prefetch((const char*) (inavxPtr + 512), _MM_HINT_NTA);
-                                inavxPtr += 8;
-
-                                c0 = _mm256_shuffle_epi8(c0, shuffleMask);
-                                c1 = _mm256_shuffle_epi8(c1, shuffleMask);
-                                c2 = _mm256_shuffle_epi8(c2, shuffleMask);
-                                c3 = _mm256_shuffle_epi8(c3, shuffleMask);
-                                c4 = _mm256_shuffle_epi8(c4, shuffleMask);
-                                c5 = _mm256_shuffle_epi8(c5, shuffleMask);
-                                c6 = _mm256_shuffle_epi8(c6, shuffleMask);
-                                c7 = _mm256_shuffle_epi8(c7, shuffleMask);
-
-                                _mm256_stream_si256(outavxPtr + 0, c0);
-                                _mm256_stream_si256(outavxPtr + 1, c1);
-                                _mm256_stream_si256(outavxPtr + 2, c2);
-                                _mm256_stream_si256(outavxPtr + 3, c3);
-                                _mm256_stream_si256(outavxPtr + 4, c4);
-                                _mm256_stream_si256(outavxPtr + 5, c5);
-                                _mm256_stream_si256(outavxPtr + 6, c6);
-                                _mm256_stream_si256(outavxPtr + 7, c7);
-                                outavxPtr += 8;
-                            }
-
-                            _mm_sfence();
-
-                            ptr = (uint8_t*) inavxPtr;
-                            outPtr = (uint8_t*) outavxPtr;
-                        } else {
-                            //  cant align the output
-
-
-                            auto* inavxPtr = ((const __m256i_u*) ptr);
-                            auto* outavxPtr = ((__m256i*) outPtr);
-
-                            _mm_prefetch((const char*) (inavxPtr), _MM_HINT_NTA);
-
-                            while (bytesLeft >= 256) {
-                                bytesLeft -= 256;
-
-                                __m256i_u c0, c1, c2, c3, c4, c5, c6, c7;
-
-                                c0 = _mm256_loadu_si256(inavxPtr + 0);
-                                c1 = _mm256_loadu_si256(inavxPtr + 1);
-                                c2 = _mm256_loadu_si256(inavxPtr + 2);
-                                c3 = _mm256_loadu_si256(inavxPtr + 3);
-                                c4 = _mm256_loadu_si256(inavxPtr + 4);
-                                c5 = _mm256_loadu_si256(inavxPtr + 5);
-                                c6 = _mm256_loadu_si256(inavxPtr + 6);
-                                c7 = _mm256_loadu_si256(inavxPtr + 7);
-                                _mm_prefetch((const char*) (inavxPtr + 512), _MM_HINT_NTA);
-                                inavxPtr += 8;
-
-                                c0 = _mm256_shuffle_epi8(c0, shuffleMask);
-                                c1 = _mm256_shuffle_epi8(c1, shuffleMask);
-                                c2 = _mm256_shuffle_epi8(c2, shuffleMask);
-                                c3 = _mm256_shuffle_epi8(c3, shuffleMask);
-                                c4 = _mm256_shuffle_epi8(c4, shuffleMask);
-                                c5 = _mm256_shuffle_epi8(c5, shuffleMask);
-                                c6 = _mm256_shuffle_epi8(c6, shuffleMask);
-                                c7 = _mm256_shuffle_epi8(c7, shuffleMask);
-
-                                _mm256_storeu_si256(outavxPtr + 0, c0);
-                                _mm256_storeu_si256(outavxPtr + 1, c1);
-                                _mm256_storeu_si256(outavxPtr + 2, c2);
-                                _mm256_storeu_si256(outavxPtr + 3, c3);
-                                _mm256_storeu_si256(outavxPtr + 4, c4);
-                                _mm256_storeu_si256(outavxPtr + 5, c5);
-                                _mm256_storeu_si256(outavxPtr + 6, c6);
-                                _mm256_storeu_si256(outavxPtr + 7, c7);
-                                outavxPtr += 8;
-                            }
-
-                            _mm_sfence();
-
-                            ptr = (uint8_t*) inavxPtr;
-                            outPtr = (uint8_t*) outavxPtr;
-                        }
-                        // because there could be SSE elsewhere, and i dont want to cause a penality there
-                        _mm256_zeroupper();
+                    // with clang 11 using -march=native
+                    // and a release mode -O3 -march=natvei libc++
+                    // this is faster than using intrinsics
+                    for (std::size_t i = 0; i < vector.size(); ++i) {
+                        T t;
+                        std::memcpy(&t, ptr, sizeof(T));
+                        t = swapEndianness(t);
+                        vector[i] = t;
+                        ptr += sizeof(T);
                     }
-        #elif defined(__SSSE3__)
-                    // yes its basically the AVX code, but not the AVX code
-                    if (bytesLeft >= 128) {
-                        __m128i shuffleMask = {};
-                        // this is compile time, or at least should be
-                        if (sizeof(T) == 2) {
-                            auto* maskPtr = reinterpret_cast<uint8_t*>(&shuffleMask);
-
-                            // performs 16 bit endianness reverse
-                            maskPtr[0] = 0x01;
-                            maskPtr[1] = 0x00;
-                            maskPtr[2] = 0x03;
-                            maskPtr[3] = 0x02;
-                            maskPtr[4] = 0x05;
-                            maskPtr[5] = 0x04;
-                            maskPtr[6] = 0x07;
-                            maskPtr[7] = 0x06;
-                            maskPtr[8] = 0x09;
-                            maskPtr[9] = 0x08;
-                            maskPtr[10] = 0x0B;
-                            maskPtr[11] = 0x0A;
-                            maskPtr[12] = 0x0D;
-                            maskPtr[13] = 0x0C;
-                            maskPtr[14] = 0x0F;
-                            maskPtr[15] = 0x0E;
-                        }
-                        if (sizeof(T) == 4) {
-                            auto* maskPtr = reinterpret_cast<uint8_t*>(&shuffleMask);
-
-                            // performs 32 bit endianness reverse
-                            maskPtr[0] = 0x03;
-                            maskPtr[1] = 0x02;
-                            maskPtr[2] = 0x01;
-                            maskPtr[3] = 0x00;
-                            maskPtr[4] = 0x07;
-                            maskPtr[5] = 0x06;
-                            maskPtr[6] = 0x05;
-                            maskPtr[7] = 0x04;
-                            maskPtr[8] = 0x0B;
-                            maskPtr[9] = 0x0A;
-                            maskPtr[10] = 0x09;
-                            maskPtr[11] = 0x08;
-                            maskPtr[12] = 0x0F;
-                            maskPtr[13] = 0x0E;
-                            maskPtr[14] = 0x0D;
-                            maskPtr[15] = 0x0C;
-                        }
-                        if (sizeof(T) == 8) {
-                            auto* maskPtr = reinterpret_cast<uint8_t*>(&shuffleMask);
-
-                            // performs 64 bit endianness reverse
-                            maskPtr[0] = 0x07;
-                            maskPtr[1] = 0x06;
-                            maskPtr[2] = 0x05;
-                            maskPtr[3] = 0x04;
-                            maskPtr[4] = 0x03;
-                            maskPtr[5] = 0x02;
-                            maskPtr[6] = 0x01;
-                            maskPtr[7] = 0x00;
-                            maskPtr[8] = 0x0F;
-                            maskPtr[9] = 0x0E;
-                            maskPtr[10] = 0x0D;
-                            maskPtr[11] = 0x0C;
-                            maskPtr[12] = 0x0B;
-                            maskPtr[13] = 0x0A;
-                            maskPtr[14] = 0x09;
-                            maskPtr[15] = 0x08;
-                        }
-                        if (sizeof(T) == 16) {
-                            auto* maskPtr = reinterpret_cast<uint8_t*>(&shuffleMask);
-
-                            // performs 128 bit endianness reverse
-                            maskPtr[0] = 0x0F;
-                            maskPtr[1] = 0x0E;
-                            maskPtr[2] = 0x0D;
-                            maskPtr[3] = 0x0C;
-                            maskPtr[4] = 0x0B;
-                            maskPtr[5] = 0x0A;
-                            maskPtr[6] = 0x09;
-                            maskPtr[7] = 0x08;
-                            maskPtr[8] = 0x07;
-                            maskPtr[9] = 0x06;
-                            maskPtr[10] = 0x05;
-                            maskPtr[11] = 0x04;
-                            maskPtr[12] = 0x03;
-                            maskPtr[13] = 0x02;
-                            maskPtr[14] = 0x01;
-                            maskPtr[15] = 0x00;
-                        }
-
-                        size_t padding = (16 - (((size_t) outPtr) & 15)) & 15;
-
-                        // check to make sure that we *can* align the memory
-                        if (padding % sizeof(T) == 0) {
-
-                            __m128i_u head = _mm_loadu_si128((const __m128i_u*) ptr);
-                            head = _mm_shuffle_epi8(head, shuffleMask);
-                            _mm_store_si128((__m128i_u*) outPtr, head);
-                            ptr += padding;
-                            outPtr += padding;
-                            bytesLeft -= padding;
-
-                            auto* inSSSEPtr = ((const __m128i_u*) ptr);
-                            auto* outSSSEPtr = ((__m128i*) outPtr);
-
-                            _mm_prefetch((const char*) (inSSSEPtr), _MM_HINT_NTA);
-
-                            while (bytesLeft >= 128) {
-                                bytesLeft -= 128;
-
-                                __m128i c0, c1, c2, c3, c4, c5, c6, c7;
-
-                                c0 = _mm_loadu_si128(inSSSEPtr + 0);
-                                c1 = _mm_loadu_si128(inSSSEPtr + 1);
-                                c2 = _mm_loadu_si128(inSSSEPtr + 2);
-                                c3 = _mm_loadu_si128(inSSSEPtr + 3);
-                                c4 = _mm_loadu_si128(inSSSEPtr + 4);
-                                c5 = _mm_loadu_si128(inSSSEPtr + 5);
-                                c6 = _mm_loadu_si128(inSSSEPtr + 6);
-                                c7 = _mm_loadu_si128(inSSSEPtr + 7);
-                                _mm_prefetch((const char*) (inSSSEPtr + 256), _MM_HINT_NTA);
-                                inSSSEPtr += 8;
-
-                                c0 = _mm_shuffle_epi8(c0, shuffleMask);
-                                c1 = _mm_shuffle_epi8(c1, shuffleMask);
-                                c2 = _mm_shuffle_epi8(c2, shuffleMask);
-                                c3 = _mm_shuffle_epi8(c3, shuffleMask);
-                                c4 = _mm_shuffle_epi8(c4, shuffleMask);
-                                c5 = _mm_shuffle_epi8(c5, shuffleMask);
-                                c6 = _mm_shuffle_epi8(c6, shuffleMask);
-                                c7 = _mm_shuffle_epi8(c7, shuffleMask);
-
-                                _mm_stream_si128(outSSSEPtr + 0, c0);
-                                _mm_stream_si128(outSSSEPtr + 1, c1);
-                                _mm_stream_si128(outSSSEPtr + 2, c2);
-                                _mm_stream_si128(outSSSEPtr + 3, c3);
-                                _mm_stream_si128(outSSSEPtr + 4, c4);
-                                _mm_stream_si128(outSSSEPtr + 5, c5);
-                                _mm_stream_si128(outSSSEPtr + 6, c6);
-                                _mm_stream_si128(outSSSEPtr + 7, c7);
-                                outSSSEPtr += 8;
-                            }
-
-                            _mm_sfence();
-
-                            ptr = (uint8_t*) inSSSEPtr;
-                            outPtr = (uint8_t*) outSSSEPtr;
-                        } else {
-                            //  cant align the output
-
-
-                            auto* inSSSEPtr = ((const __m128i_u*) ptr);
-                            auto* outSSSEPtr = ((__m128i_u*) outPtr);
-
-                            _mm_prefetch((const char*) (inSSSEPtr), _MM_HINT_NTA);
-
-                            while (bytesLeft >= 256) {
-                                bytesLeft -= 256;
-
-                                __m128i c0, c1, c2, c3, c4, c5, c6, c7;
-
-                                c0 = _mm_loadu_si128(inSSSEPtr + 0);
-                                c1 = _mm_loadu_si128(inSSSEPtr + 1);
-                                c2 = _mm_loadu_si128(inSSSEPtr + 2);
-                                c3 = _mm_loadu_si128(inSSSEPtr + 3);
-                                c4 = _mm_loadu_si128(inSSSEPtr + 4);
-                                c5 = _mm_loadu_si128(inSSSEPtr + 5);
-                                c6 = _mm_loadu_si128(inSSSEPtr + 6);
-                                c7 = _mm_loadu_si128(inSSSEPtr + 7);
-                                _mm_prefetch((const char*) (inSSSEPtr + 256), _MM_HINT_NTA);
-                                inSSSEPtr += 8;
-
-                                c0 = _mm_shuffle_epi8(c0, shuffleMask);
-                                c1 = _mm_shuffle_epi8(c1, shuffleMask);
-                                c2 = _mm_shuffle_epi8(c2, shuffleMask);
-                                c3 = _mm_shuffle_epi8(c3, shuffleMask);
-                                c4 = _mm_shuffle_epi8(c4, shuffleMask);
-                                c5 = _mm_shuffle_epi8(c5, shuffleMask);
-                                c6 = _mm_shuffle_epi8(c6, shuffleMask);
-                                c7 = _mm_shuffle_epi8(c7, shuffleMask);
-
-                                _mm_store_si128(outSSSEPtr + 0, c0);
-                                _mm_store_si128(outSSSEPtr + 1, c1);
-                                _mm_store_si128(outSSSEPtr + 2, c2);
-                                _mm_store_si128(outSSSEPtr + 3, c3);
-                                _mm_store_si128(outSSSEPtr + 4, c4);
-                                _mm_store_si128(outSSSEPtr + 5, c5);
-                                _mm_store_si128(outSSSEPtr + 6, c6);
-                                _mm_store_si128(outSSSEPtr + 7, c7);
-                                outSSSEPtr += 8;
-                            }
-
-                            _mm_sfence();
-
-                            ptr = (uint8_t*) inSSSEPtr;
-                            outPtr = (uint8_t*) outSSSEPtr;
-                        }
-                    }
-        #endif
-    #else
-    #endif
-                    // finish up what is left, or do it all because no special code to help do a bulk of it faster
-
-                    while (bytesLeft > 0) {
-                        *(T*) outPtr = swapEndianness<T>(*(T*) ptr);
-                        outPtr += sizeof(T);
-                        bytesLeft -= sizeof(T);
-                    }
-                    if (bytesLeft < 0) {
-                        // uhh, problem
-                    }
-
                 }
                 return vector;
             } else {
                 // well, shit, its a different type
-
-                // todo: intrinsic casting
 
                 // yes this is slow, there isn't much i can do about that
                 switch (removeEndianness(type)) {
@@ -1304,7 +691,7 @@ namespace RogueLib::ROBN {
             // so, its a non-integer type.
             checkPtr(1);
             Type lengthType = static_cast<Type>(*ptr++);
-            auto length = fromROBN < std::uint64_t > (ptr, endPtr, lengthType);
+            auto length = fromROBN<std::uint64_t>(ptr, endPtr, lengthType);
             checkPtr(1);
             Type valType = static_cast<Type>(*ptr++);
             std::vector<T> vector;
@@ -1394,7 +781,7 @@ namespace RogueLib::ROBN {
                 auto* valPtr = (std::string*) &val;
                 bytes.resize(valPtr->size() + 2);
                 bytes[0] = Type::String;
-                contiguousMemoryCopy(bytes.data() + 1, valPtr->data(), valPtr->size());
+                std::memcpy(bytes.data() + 1, valPtr->data(), valPtr->size());
                 *(bytes.end() - 1) = 0; // null termination
                 return bytes;
             }
@@ -1468,7 +855,7 @@ namespace RogueLib::ROBN {
             dataPtr[1] = std::uint8_t(Type::uInt64) | std::uint8_t(Endianness::NATIVE);
             dataPtr += 2;
             std::uint64_t length = val.size();
-            contiguousMemoryCopy(dataPtr, &length, 8);
+            std::memcpy(dataPtr, &length, 8);
             dataPtr += 8;
             *dataPtr = primitiveTypeID<bool>();
             dataPtr++;
@@ -1518,16 +905,16 @@ namespace RogueLib::ROBN {
                 dataPtr[1] = std::uint8_t(Type::uInt64) | std::uint8_t(Endianness::NATIVE);
                 dataPtr += 2;
                 std::uint64_t length = val.size();
-                contiguousMemoryCopy(dataPtr, &length, 8);
+                std::memcpy(dataPtr, &length, 8);
                 dataPtr += 8;
                 *dataPtr = primitiveTypeID<T>();
                 dataPtr++;
                 // ok, header is done, now copy in the values
-                contiguousMemoryCopy(dataPtr, val.data(), val.size() * sizeof(T));
+                std::memcpy(dataPtr, val.data(), val.size() * sizeof(T));
                 return bytes;
             } else {
 
-                // ive tested it, i cant get it to go faster...
+                // i cant get it to go faster...
 
                 ROBN bytes;
 
@@ -1557,7 +944,7 @@ namespace RogueLib::ROBN {
                 dataPtr[1] = std::uint8_t(Type::uInt64) | std::uint8_t(Endianness::NATIVE);
                 dataPtr += 2;
                 std::uint64_t length = bytes.size();
-                contiguousMemoryCopy(dataPtr, &length, 8);
+                std::memcpy(dataPtr, &length, 8);
                 dataPtr += 8;
                 *dataPtr = primitiveTypeID<T>();
                 dataPtr++;
@@ -1574,7 +961,7 @@ namespace RogueLib::ROBN {
                         }
                     }
 //                    requestBytes(vec.size());
-//                    contiguousMemoryCopy(dataPtr, vec.data() + 1, vec.size() - 1);
+//                    std::memcpy(dataPtr, vec.data() + 1, vec.size() - 1);
                     bytes.insert(bytes.end(), vec.begin() + (first ? 0 : 1), vec.end());
                     first = false;
                 }
@@ -1606,9 +993,9 @@ namespace RogueLib::ROBN {
             auto data = bytes.data();
             data[0] = Type::Pair;
             data++;
-            contiguousMemoryCopy(data, firstBytes.data(), firstBytes.size());
+            std::memcpy(data, firstBytes.data(), firstBytes.size());
             data += firstBytes.size();
-            contiguousMemoryCopy(data, secondBytes.data(), secondBytes.size());
+            std::memcpy(data, secondBytes.data(), secondBytes.size());
             return bytes;
         }
 
