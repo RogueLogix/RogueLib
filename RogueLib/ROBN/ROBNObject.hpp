@@ -43,7 +43,7 @@ namespace RogueLib::ROBN {
             }
 
             // didnt i say that smaller wins?
-            for (int i = 0; i < robn.size(); ++i) {
+            for (std::size_t i = 0; i < robn.size(); ++i) {
                 if (this->robn[i] < other.robn[i]) {
                     return std::strong_ordering::less;
                 }

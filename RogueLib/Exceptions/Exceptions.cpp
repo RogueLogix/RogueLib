@@ -69,7 +69,7 @@ namespace RogueLib::Exceptions {
         std::string trace;
         trace += errorType + ": " + message + "\n";
 #pragma unroll 4
-        for (int64_t i = 0; i < stacktrace.size(); i++) {
+        for (std::size_t i = 0; i < stacktrace.size(); i++) {
             auto toPrint = stacktrace[i];
             std::string stringToPrint;
 
@@ -138,7 +138,7 @@ namespace RogueLib::Exceptions {
         }
 
         std::string trace;
-        for (int64_t i = 0; i < stacktrace.size(); i++) {
+        for (std::size_t i = 0; i < stacktrace.size(); i++) {
             auto toPrint = stacktrace[i];
             std::string stringToPrint;
 

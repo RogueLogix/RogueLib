@@ -114,31 +114,31 @@ namespace RogueLib::Networking {
             }
 
             // aight, content check time
-            for (int i = 0; i < ipv4Addresses.size(); ++i) {
+            for (std::size_t i = 0; i < ipv4Addresses.size(); ++i) {
                 if (ipv4Addresses[i] != other.ipv4Addresses[i]) {
                     return false;
                 }
             }
 
-            for (int i = 0; i < ipv6Addresses.size(); ++i) {
+            for (std::size_t i = 0; i < ipv6Addresses.size(); ++i) {
                 if (ipv6Addresses[i] != other.ipv6Addresses[i]) {
                     return false;
                 }
             }
 
-            for (int i = 0; i < domains.size(); ++i) {
+            for (std::size_t i = 0; i < domains.size(); ++i) {
                 if (domains[i] != other.domains[i]) {
                     return false;
                 }
             }
 
-            for (int i = 0; i < ports.size(); ++i) {
+            for (std::size_t i = 0; i < ports.size(); ++i) {
                 if (ports[i] != other.ports[i]) {
                     return false;
                 }
             }
 
-            for (int i = 0; i < services.size(); ++i) {
+            for (std::size_t i = 0; i < services.size(); ++i) {
                 if (services[i] != other.services[i]) {
                     return false;
                 }

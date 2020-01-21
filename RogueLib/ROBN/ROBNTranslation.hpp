@@ -304,7 +304,7 @@ namespace RogueLib::ROBN {
     std::vector<NT> castVector(std::vector<OT> vector) {
         std::vector<NT> newVector;
         newVector.resize(vector.size());
-        for (int i = 0; i < vector.size(); ++i) {
+        for (std::size_t i = 0; i < vector.size(); ++i) {
             newVector[i] = NT(vector[i]);
         }
         return newVector;
