@@ -724,10 +724,10 @@ namespace RogueLib::ROBN {
         typedef typename P::first_type FT;
         typedef typename P::second_type ST;
 
-        P pair{};
-        if (ptr >= endPtr) {
+        if (type != Type::Pair || ptr >= endPtr) {
             throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
         }
+        P pair{};
         Type firstType = static_cast<Type>(*ptr);
         pair.first = fromROBN < FT > (ptr, endPtr, firstType);
         if (ptr >= endPtr) {
@@ -752,11 +752,11 @@ namespace RogueLib::ROBN {
         typedef typename M::key_type KT;
         typedef typename M::mapped_type MT;
 
-        M map{};
-        if (ptr >= endPtr) {
+        if (type != Type::Map || ptr >= endPtr) {
             throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
         }
 
+        M map{};
         Type lengthType = static_cast<Type>(*ptr++);
         auto length = fromROBN<std::uint64_t>(ptr, endPtr, lengthType);
         for (std::uint64_t i = 0; i < length; ++i) {
