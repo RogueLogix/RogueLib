@@ -3,6 +3,11 @@
 // https://github.com/preshing/cpp11-on-multicore/blob/master/LICENSE
 //---------------------------------------------------------
 
+/**
+ * NOTICE: This is a modified version of cpp11-on-multicore, original source can be found on github
+ * linked in README.md in this directory
+ */
+
 #ifndef __CPP11OM_SEMAPHORE_H__
 #define __CPP11OM_SEMAPHORE_H__
 
