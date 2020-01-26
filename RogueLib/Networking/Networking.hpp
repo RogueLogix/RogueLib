@@ -65,7 +65,7 @@ namespace RogueLib::Networking {
 
     struct Endpoint {
         // all addresses and ports are treated as a single endpoint
-        // will be tried in order until one connects
+        // will be tried until one connects
         // domains may not contain ports
         std::vector<std::uint32_t> ipv4Addresses;
         std::vector<__int128> ipv6Addresses;
@@ -74,41 +74,14 @@ namespace RogueLib::Networking {
         std::vector<std::uint16_t> ports;
         std::vector<std::string> services;
 
-        // how heavily should this endpoint be weighted relative to others
-        std::uint64_t weight;
-        // speed, while technically relative and you don't need to use anything specific, i recommend using megabit
-        // if its a bonded connection. use lowest actual
-        // for infiniband, use datarate not link rate.
-        // ex: 100 for 100mbps
-        //     1000 for 1gbps
-        //     2500 for 2.5gbps
-        //     10000 for 10gbps
-        //     16000 for 16gbps
-        //     20000 for 20gbps
-        std::uint64_t speed;
-
-        // should be self explanitory
-        // allows RDMA transport over infiniband
-        // figures out what (if any) ip addresses are IPoIB
-        // if an IPoIB port that can communicate is found, it is used before other communication types.
-        bool isInfiniband = false;
-
-        // its for std::sort
-        inline bool operator<(const Endpoint& other) const {
-            return this->weight < other.weight;
-        }
-
         inline bool operator==(const Endpoint& other) const {
             // size checks
             if (
-                    weight != other.weight ||
-                    speed != other.speed ||
                     ipv4Addresses.size() != other.ipv4Addresses.size() ||
                     ipv6Addresses.size() != other.ipv6Addresses.size() ||
                     domains.size() != other.domains.size() ||
                     ports.size() != other.ports.size() ||
-                    services.size() != other.services.size() ||
-                    this->isInfiniband != other.isInfiniband
+                    services.size() != other.services.size()
                     ) {
                 return false;
             }
@@ -148,10 +121,10 @@ namespace RogueLib::Networking {
             return true;
         }
 
-        Endpoint() : weight(1), speed(0) {
+        Endpoint(){
         }
 
-        Endpoint(std::vector<std::string> urls, std::uint64_t weight);
+        Endpoint(std::vector<std::string> urls);
 
         [[nodiscard]] std::vector<std::uint8_t> serialize() const;
 
