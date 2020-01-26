@@ -10,7 +10,7 @@ namespace RogueLib::ROBN {
         std::map<std::string, std::vector<std::string>> reliance;
         std::map<std::string, std::function<bool()>> requirementChecks;
         std::map<std::string, std::function<ROBN()>> serializationFunctions;
-        std::map<std::string, std::function<void(std::uint8_t*& ptr, const std::uint8_t* const endPtr,
+        std::map<std::string, std::function<void(std::byte*& ptr, const std::byte* const endPtr,
                                                  Type type)>> deserializationFunctions;
     public:
 
@@ -19,7 +19,7 @@ namespace RogueLib::ROBN {
             auto serializationFunc = [&]() {
                 return RogueLib::ROBN::toROBN<T>(val);
             };
-            auto deserializationFunc = [&](std::uint8_t*& ptr, const std::uint8_t* const endPtr, Type type) {
+            auto deserializationFunc = [&](std::byte*& ptr, const std::byte* const endPtr, Type type) {
                 val = RogueLib::ROBN::fromROBN<T>(ptr, endPtr, type);
             };
             reliance[name] = {};
@@ -64,7 +64,7 @@ namespace RogueLib::ROBN {
             return RogueLib::ROBN::toROBN(objects);
         }
 
-        virtual void fromROBN(std::uint8_t*& ptr, const std::uint8_t* const endPtr, Type type) override {
+        virtual void fromROBN(std::byte*& ptr, const std::byte* const endPtr, Type type) override {
             ROGUELIB_STACKTRACE
             auto objects = RogueLib::ROBN::fromROBN<std::map<std::string, ROBN>>(ptr, endPtr, type);
 
@@ -94,11 +94,11 @@ namespace RogueLib::ROBN {
                 readObject(item.first);
             }
 
-            if ((ptr + 1) >= endPtr || *ptr != Type::SublistStart) {
+            if ((ptr + 1) >= endPtr || *ptr != std::byte{Type::SublistStart}) {
                 // TODO throw exception __invalid_argument_incompatible_binary_type
             }
-            while (ptr < endPtr && *ptr != Type::SublistEnd) {
-                if (*ptr != Type::String || ptr++ >= endPtr) {
+            while (ptr < endPtr && *ptr != std::byte{Type::SublistEnd}) {
+                if (*ptr != std::byte{Type::String} || ptr++ >= endPtr) {
                     // TODO throw exception __invalid_argument_incompatible_binary_type
                 }
                 auto name = RogueLib::ROBN::fromROBN<std::string>(ptr, endPtr, Type::String);
@@ -108,7 +108,7 @@ namespace RogueLib::ROBN {
                 ptr++;
                 deserializationFunctions[name](ptr, endPtr, Type(ptr[-1]));
             }
-            if (ptr > endPtr || *ptr != Type::SublistEnd) {
+            if (ptr > endPtr || *ptr != std::byte{Type::SublistEnd}) {
                 // TODO throw exception __invalid_argument_incompatible_binary_type
             }
         };
