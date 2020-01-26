@@ -247,7 +247,7 @@ namespace RogueLib::ROBN {
             std::is_same<T, __int128>::value || std::is_same<T, unsigned __int128>::value, int> = 0>
     constexpr T swapEndianness(T val) {
         // 128 bit endianness swap without a native way do to this
-        // TPDP: adhere to standard
+        // TODO: adhere to standard
         auto* ptr_64 = (uint64_t*) (&val);
         ptr_64[0] = bswap_64(ptr_64[0]);
         ptr_64[1] = bswap_64(ptr_64[1]);
