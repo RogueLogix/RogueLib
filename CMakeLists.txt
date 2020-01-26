@@ -34,6 +34,8 @@ else ()
     message(FATAL_ERROR "UNNKNOWN BUILD TYPE")
 endif ()
 
+set(ROGUELIB_ALL_LIBRARIES "")
+
 function(add_lib LIB_NAME)
     file(GLOB_RECURSE LIB_SRC ${CMAKE_CURRENT_LIST_DIR}/*.cpp ${CMAKE_CURRENT_LIST_DIR}/*.hpp)
     file(GLOB_RECURSE LIB_TEST_SRC ${CMAKE_CURRENT_LIST_DIR}/test/*.cpp ${CMAKE_CURRENT_LIST_DIR}/test/*.hpp)
@@ -74,6 +76,8 @@ function(add_lib LIB_NAME)
     set(LAST_LIBRARY RogueLib_${LIB_NAME} PARENT_SCOPE)
     set(LAST_LIBRARY_TYPE ${LIB_TYPE} PARENT_SCOPE)
 
+    set(ROGUELIB_ALL_LIBRARIES "${ROGUELIB_ALL_LIBRARIES} ${LAST_LIBRARY}")
+
 endfunction()
 
 function(add_external_lib_dependency DEP_NAME)
@@ -95,3 +99,6 @@ add_subdirectory(RogueLib/Networking)
 # add_subdirectory(RogueLib/NUMA)
 add_subdirectory(RogueLib/Scripting)
 add_subdirectory(RogueLib/Threading)
+
+add_library(RogueLib INTERFACE)
+target_link_libraries(RogueLib INTERFACE ${ROGUELIB_ALL_LIBRARIES})
