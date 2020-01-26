@@ -225,6 +225,8 @@ namespace RogueLib::Networking {
 
         void bindEndpoint(Endpoint endpoint);
 
+        void unbindEndpoint(Endpoint endpoint);
+
         void addClientEndpoint(Endpoint endpoint, std::uint64_t weight);
 
         Connection connect(Endpoint initialEndpoint);
