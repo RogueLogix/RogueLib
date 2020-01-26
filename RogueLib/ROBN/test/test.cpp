@@ -17,7 +17,7 @@ std::default_random_engine generator;
 
 BOOST_AUTO_TEST_CASE(stringEncode) {
     srand(std::chrono::system_clock::now().time_since_epoch().count());
-    BOOST_CHECK(toROBN<std::string>("testString")[0] == Type::String);
+    BOOST_CHECK(toROBN<std::string>("testString")[0] == std::byte{Type::String});
     for (int i = 0; i < 100; ++i) {
         std::uint16_t strlen = rand();
         std::string str;
@@ -37,18 +37,18 @@ BOOST_AUTO_TEST_CASE(stringEncode) {
 BOOST_AUTO_TEST_CASE(stringDecode) {
     srand(std::chrono::system_clock::now().time_since_epoch().count());
     for (int i = 0; i < 100; ++i) {
-        std::vector<std::uint8_t> strBytes;
-        strBytes.emplace_back(Type::String);
+        ROBN strBytes;
+        strBytes.emplace_back(std::byte{Type::String});
         std::uint16_t strlen = rand();
         strBytes.resize(strlen + 2);
         for (int j = 1; j <= strlen; ++j) {
-            char randChar = 0;
+            std::uint8_t randChar = 0;
             while (randChar == 0) {
                 randChar = rand();
             }
-            strBytes[j] = randChar;
+            strBytes[j] = std::byte{randChar};
         }
-        strBytes[strlen + 1] = 0;
+        strBytes[strlen + 1] = std::byte{0};
 
         std::string str = fromROBN<std::string>(strBytes);
 
@@ -60,23 +60,23 @@ BOOST_AUTO_TEST_CASE(stringDecode) {
 BOOST_AUTO_TEST_CASE(boolEncode) {
     auto trueBytes = toROBN(true);
     BOOST_CHECK(trueBytes.size() == 2);
-    BOOST_CHECK(trueBytes[0] == Type::Bool);
-    BOOST_CHECK(trueBytes[1] == 1);
+    BOOST_CHECK(trueBytes[0] == std::byte{Type::Bool});
+    BOOST_CHECK(trueBytes[1] == std::byte{1});
     auto falseBytes = toROBN(false);
     BOOST_CHECK(falseBytes.size() == 2);
-    BOOST_CHECK(falseBytes[0] == Type::Bool);
-    BOOST_CHECK(falseBytes[1] == 0);
+    BOOST_CHECK(falseBytes[0] == std::byte{Type::Bool});
+    BOOST_CHECK(falseBytes[1] == std::byte{0});
 }
 
 BOOST_AUTO_TEST_CASE(boolDecode) {
-    std::vector<std::uint8_t> decodeTestBytes;
-    decodeTestBytes.emplace_back(Type::Bool);
-    decodeTestBytes.emplace_back(0);
+    ROBN decodeTestBytes;
+    decodeTestBytes.emplace_back(std::byte{Type::Bool});
+    decodeTestBytes.emplace_back(std::byte{0});
     BOOST_CHECK(!fromROBN<bool>(decodeTestBytes));
 
     // C++ 20 defines this behavior
     for (std::uint8_t i = 1; i != 0; ++i) {
-        decodeTestBytes[1] = i;
+        decodeTestBytes[1] = std::byte{i};
         BOOST_CHECK(fromROBN<bool>(decodeTestBytes));
     }
 }
@@ -86,31 +86,31 @@ BOOST_AUTO_TEST_CASE(int8Encode) {
     do {
         auto bytes = toROBN(val);
         BOOST_CHECK(bytes.size() == 2);
-        BOOST_CHECK(bytes[0] == (std::uint8_t(Type::Int8) | std::uint8_t(Endianness::NATIVE)));
-        BOOST_CHECK(bytes[1] == std::uint8_t(val));
+        BOOST_CHECK(bytes[0] == (std::byte(Type::Int8) | std::byte(Endianness::NATIVE)));
+        BOOST_CHECK(bytes[1] == std::byte(val));
     } while (val++ != 0);
 }
 
 BOOST_AUTO_TEST_CASE(int8Decode) {
-    std::vector<std::uint8_t> decodeTestBytes;
-    decodeTestBytes.emplace_back(Type::Int8);
-    decodeTestBytes.emplace_back(0);
+    ROBN decodeTestBytes;
+    decodeTestBytes.emplace_back(std::byte{Type::Int8});
+    decodeTestBytes.emplace_back(std::byte{0});
     BOOST_CHECK(!fromROBN<std::int8_t>(decodeTestBytes));
 
     // C++ 20 defines this behavior
     for (std::uint8_t i = 1; i != 0; ++i) {
-        decodeTestBytes[1] = i;
+        decodeTestBytes[1] = std::byte{i};
         BOOST_CHECK(std::int8_t(decodeTestBytes[1]) == fromROBN<std::int8_t>(decodeTestBytes));
     }
 }
 
 BOOST_AUTO_TEST_CASE(int16Encode) {
     std::int16_t val = 0;
-    auto* bytePtr = reinterpret_cast<uint8_t*>(&val);
+    auto* bytePtr = reinterpret_cast<std::byte*>(&val);
     do {
         auto bytes = toROBN(val);
         BOOST_CHECK(bytes.size() == 3);
-        BOOST_CHECK(bytes[0] == (std::uint8_t(Type::Int16) | std::uint8_t(Endianness::NATIVE)));
+        BOOST_CHECK(bytes[0] == (std::byte(Type::Int16) | std::byte(Endianness::NATIVE)));
         BOOST_CHECK(bytes[1] == bytePtr[0]);
         BOOST_CHECK(bytes[2] == bytePtr[1]);
     } while (++val != 0);
@@ -121,7 +121,7 @@ BOOST_AUTO_TEST_CASE(int16Decode) {
     do {
         auto bytes = toROBN(val);
         BOOST_CHECK_MESSAGE(val == fromROBN<std::int16_t>(bytes), std::to_string(val));
-        bytes[0] ^= Endianness::BIG;
+        bytes[0] ^= std::byte{Endianness::BIG};
         bytes[1] ^= bytes[2];
         bytes[2] ^= bytes[1];
         bytes[1] ^= bytes[2];
@@ -131,10 +131,10 @@ BOOST_AUTO_TEST_CASE(int16Decode) {
 
 BOOST_AUTO_TEST_CASE(int32Encode) {
     auto runCheck = [](auto val) {
-        auto* bytePtr = reinterpret_cast<uint8_t*>(&val);
+        auto* bytePtr = reinterpret_cast<std::byte*>(&val);
         auto bytes = toROBN(val);
         BOOST_CHECK(bytes.size() == 5);
-        BOOST_CHECK(bytes[0] == (std::uint8_t(Type::Int32) | std::uint8_t(Endianness::NATIVE)));
+        BOOST_CHECK(bytes[0] == (std::byte(Type::Int32) | std::byte(Endianness::NATIVE)));
         BOOST_CHECK(bytes[1] == bytePtr[0]);
         BOOST_CHECK(bytes[2] == bytePtr[1]);
         BOOST_CHECK(bytes[3] == bytePtr[2]);
@@ -155,7 +155,7 @@ BOOST_AUTO_TEST_CASE(int32Decode) {
     auto runCheck = [](auto val) {
         auto bytes = toROBN(val);
         BOOST_CHECK_MESSAGE(val == fromROBN<decltype(val)>(bytes), std::to_string(val));
-        bytes[0] ^= Endianness::BIG;
+        bytes[0] ^= std::byte{Endianness::BIG};
 
         bytes[2] ^= bytes[3];
         bytes[3] ^= bytes[2];
@@ -180,10 +180,10 @@ BOOST_AUTO_TEST_CASE(int32Decode) {
 
 BOOST_AUTO_TEST_CASE(int64Encode) {
     auto runCheck = [](auto val) {
-        auto* bytePtr = reinterpret_cast<uint8_t*>(&val);
+        auto* bytePtr = reinterpret_cast<std::byte*>(&val);
         auto bytes = toROBN(val);
         BOOST_CHECK(bytes.size() == 9);
-        BOOST_CHECK(bytes[0] == (std::uint8_t(Type::Int64) | std::uint8_t(Endianness::NATIVE)));
+        BOOST_CHECK(bytes[0] == (std::byte(Type::Int64) | std::byte(Endianness::NATIVE)));
         BOOST_CHECK(bytes[1] == bytePtr[0]);
         BOOST_CHECK(bytes[2] == bytePtr[1]);
         BOOST_CHECK(bytes[3] == bytePtr[2]);
@@ -208,7 +208,7 @@ BOOST_AUTO_TEST_CASE(int64Decode) {
     auto runCheck = [](auto val) {
         auto bytes = toROBN(val);
         BOOST_CHECK_MESSAGE(val == fromROBN<decltype(val)>(bytes), std::to_string(val));
-        bytes[0] ^= Endianness::BIG;
+        bytes[0] ^= std::byte{Endianness::BIG};
 
         bytes[1] ^= bytes[8];
         bytes[8] ^= bytes[1];
@@ -241,10 +241,10 @@ BOOST_AUTO_TEST_CASE(int64Decode) {
 
 BOOST_AUTO_TEST_CASE(int128Encode) {
     auto runCheck = [](auto val) {
-        auto* bytePtr = reinterpret_cast<uint8_t*>(&val);
+        auto* bytePtr = reinterpret_cast<std::byte*>(&val);
         auto bytes = toROBN(val);
         BOOST_CHECK(bytes.size() == 17);
-        BOOST_CHECK(bytes[0] == (std::uint8_t(Type::Int128) | std::uint8_t(Endianness::NATIVE)));
+        BOOST_CHECK(bytes[0] == (std::byte(Type::Int128) | std::byte(Endianness::NATIVE)));
         BOOST_CHECK(bytes[1] == bytePtr[0]);
         BOOST_CHECK(bytes[2] == bytePtr[1]);
         BOOST_CHECK(bytes[3] == bytePtr[2]);
@@ -290,7 +290,7 @@ BOOST_AUTO_TEST_CASE(int128Decode) {
     auto runCheck = [](auto val) {
         auto bytes = toROBN(val);
         BOOST_CHECK(val == fromROBN<decltype(val)>(bytes));
-        bytes[0] ^= Endianness::BIG;
+        bytes[0] ^= std::byte{Endianness::BIG};
 
         bytes[1] ^= bytes[16];
         bytes[16] ^= bytes[1];

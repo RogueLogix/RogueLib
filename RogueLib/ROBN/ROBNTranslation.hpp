@@ -286,7 +286,7 @@ namespace RogueLib::ROBN {
         ROGUELIB_STACKTRACE
         ROBN bytes;
         bytes.resize(sizeof(val) + 1);
-        bytes[0] = primitiveTypeID<T>();
+        bytes[0] = std::byte{primitiveTypeID<T>()};
         std::memcpy(bytes.data() + 1, &val, sizeof(val));
         return bytes;
     }
@@ -326,14 +326,11 @@ namespace RogueLib::ROBN {
             case NS_ENUM_TYPE::Bool: {
                 if (ptr < endPtr) {
                     ptr++;
-                    return ptr[-1];
+                    return std::to_integer<bool>(ptr[-1]);
                 }
                 throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
             }
             case NS_ENUM_TYPE::Int8: {
-                if (ptr > endPtr) {
-                    throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
-                }
                 std::int8_t tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
@@ -379,10 +376,13 @@ namespace RogueLib::ROBN {
                 return correctEndianness(tempval, typeEndianness(type));
             }
             case NS_ENUM_TYPE::uInt8: {
-                if (ptr > endPtr) {
+                std::uint8_t tempval;
+                if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                 }
-                return *ptr++;
+                std::memcpy(&tempval, ptr, 1);
+                ptr++;
+                return tempval;
             }
             case NS_ENUM_TYPE::uInt16: {
                 std::uint16_t tempval;
@@ -885,7 +885,7 @@ namespace RogueLib::ROBN {
                 std::uint64_t length = val.size();
                 std::memcpy(dataPtr, &length, 8);
                 dataPtr += 8;
-                *dataPtr = primitiveTypeID<T>();
+                *dataPtr = std::byte{primitiveTypeID<T>()};
                 dataPtr++;
                 // ok, header is done, now copy in the values
                 std::memcpy(dataPtr, val.data(), val.size() * sizeof(T));
@@ -924,7 +924,7 @@ namespace RogueLib::ROBN {
                 std::uint64_t length = bytes.size();
                 std::memcpy(dataPtr, &length, 8);
                 dataPtr += 8;
-                *dataPtr = primitiveTypeID<T>();
+                *dataPtr = std::byte{primitiveTypeID<T>()};
                 dataPtr++;
 
 
@@ -995,7 +995,7 @@ namespace RogueLib::ROBN {
             ROGUELIB_STACKTRACE
             ROBN bytes;
 
-            bytes.emplace_back(Type::Map);
+            bytes.emplace_back(std::byte{Type::Map});
 
             auto lengthBytes = BinaryConversion<std::uint64_t>::toROBN(val.size());
             bytes.insert(bytes.end(), lengthBytes.begin(), lengthBytes.end());
