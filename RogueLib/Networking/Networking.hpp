@@ -232,13 +232,13 @@ namespace RogueLib::Networking {
 //        void connectLoadBalancer(Endpoint loadBalancer);
     };
 
-    //todo
-//    class LoadBalancer{
-//        enum class Mode{
-//            DEFAULT = 0,
-//            ROUND_ROBIN = 1,
-//            FAILOVER = 2,
-//            LOWER_CONNECTIONS = 3,
-//        };
-//    };
+    /**
+     * Variables used to query the capabilities of the linked library
+     * extern variables used as this can change if using dynamic linking
+     */
+    namespace Capabilities{
+        // defined in ./IMPL/Infiniband.cpp
+        extern const bool infinibandEnabled;
+        extern const bool sharedMemoryEnabled;
+    }
 }
