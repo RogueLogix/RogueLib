@@ -1,6 +1,6 @@
 #pragma  once
 
-#include <compare>
+#include "ROBNTranslation.hpp"
 
 namespace RogueLib::ROBN {
     class ROBNObject : public Serializable {
@@ -31,59 +31,57 @@ namespace RogueLib::ROBN {
             return as<T>();
         }
 
-        std::strong_ordering operator<=>(
-        const ROBNObject& other
-        ) const {
+        char threeWayComp(const ROBNObject& other) const {
             // smaller robn wins
             if (this->robn.size() < other.robn.size()) {
-                return std::strong_ordering::less;
+                return -1;
             }
             if (this->robn.size() > other.robn.size()) {
-                return std::strong_ordering::greater;
+                return 1;
             }
 
             // didnt i say that smaller wins?
             for (std::size_t i = 0; i < robn.size(); ++i) {
                 if (this->robn[i] < other.robn[i]) {
-                    return std::strong_ordering::less;
+                    return -1;
                 }
                 if (this->robn[i] > other.robn[i]) {
-                    return std::strong_ordering::greater;
+                    return 1;
                 }
             }
-            return std::strong_ordering::equal;
+            return 0;
         }
 
         bool operator<(const ROBNObject& other) const {
-            return std::is_lt(*this <=> other);
+            return threeWayComp(other) < 0;
         }
 
         bool operator>(const ROBNObject& other) const {
-            return std::is_gt(*this <=> other);
+            return threeWayComp(other) > 0;
         }
 
         bool operator<=(const ROBNObject& other) const {
-            return std::is_lteq(*this <=> other);
+            return threeWayComp(other) <= 0;
         }
 
         bool operator>=(const ROBNObject& other) const {
-            return std::is_gteq(*this <=> other);
+            return threeWayComp(other) >= 0;
         }
 
         bool operator==(const ROBNObject& other) const {
-            return std::is_eq(*this <=> other);
+            return threeWayComp(other) == 0;
         }
 
 
         bool operator!=(const ROBNObject& other) const {
-            return std::is_neq(*this <=> other);
+            return threeWayComp(other) != 0;
         }
 
         ROBN toROBN() override {
             return RogueLib::ROBN::toROBN(robn);
         }
 
-        void fromROBN(std::uint8_t*& ptr, const std::uint8_t* endPtr, Type type) override {
+        void fromROBN(std::byte*& ptr, const std::byte* endPtr, Type type) override {
             robn = RogueLib::ROBN::fromROBN<ROBN>(ptr, endPtr, type);
         }
     };
