@@ -5,7 +5,7 @@
 
 #include <mutex>
 // yes its a simple macro,but it does make it easier
-#define ROGUELIB_SYNCHRONIZED_SCOPE static std::mutex syncMutex;std::unique_lock syncLock(syncMutex);
+#define ROGUELIB_SYNCHRONIZED_SCOPE static std::mutex syncMutex;std::unique_lock<std::mutex> syncLock(syncMutex);
 
 namespace RogueLib::Threading {
     class Thread {

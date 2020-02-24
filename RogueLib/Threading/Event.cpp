@@ -3,14 +3,14 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
-#include <boost/bind/bind.hpp>
+#include <vector>
 
 namespace RogueLib::Threading {
     class Event::IMPL {
         std::vector<boost::function<void()>> callbacks;
         std::mutex callbackMutex;
         std::condition_variable waitCV;
-        std::atomic_bool wasTriggered = false;
+        std::atomic_bool wasTriggered = {false};
     
     public:
         void wait();
@@ -24,7 +24,7 @@ namespace RogueLib::Threading {
     };
     
     void Event::IMPL::wait() {
-        std::unique_lock lk(callbackMutex);
+        std::unique_lock<std::mutex> lk(callbackMutex);
         if (wasTriggered) {
             return;
         }
@@ -32,7 +32,7 @@ namespace RogueLib::Threading {
     }
     
     void Event::IMPL::trigger() {
-        std::unique_lock lk(callbackMutex);
+        std::unique_lock<std::mutex> lk(callbackMutex);
         if (wasTriggered) {
             return;
         }
@@ -46,7 +46,7 @@ namespace RogueLib::Threading {
     }
     
     void Event::IMPL::registerCallback(boost::function<void()> callback) {
-        std::unique_lock lk(callbackMutex);
+        std::unique_lock<std::mutex> lk(callbackMutex);
         if (wasTriggered) {
             callback();
             return;

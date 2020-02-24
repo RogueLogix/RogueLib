@@ -11,16 +11,16 @@
 namespace RogueLib::Threading {
     
     class Thread::IMPL {
-        std::atomic_bool hasFunction = false;
+        std::atomic_bool hasFunction = {false};
         std::function<void()> function;
         
-        std::atomic_bool started = false;
+        std::atomic_bool started = {false};
         std::thread internalThread;
         
-        std::atomic_uint64_t threadID = std::numeric_limits<uint64_t>::max();
-        std::atomic_bool joined = false;
+        std::atomic_uint64_t threadID = {std::numeric_limits<uint64_t>::max()};
+        std::atomic_bool joined = {false};
         
-        std::atomic_bool shouldTerminateAtException = true;
+        std::atomic_bool shouldTerminateAtException = {true};
         std::vector<std::function<void(std::exception)>> uncaughtExceptionHandlers;
         
         std::weak_ptr<IMPL> selfPtr;
@@ -64,7 +64,7 @@ namespace RogueLib::Threading {
     
     static std::vector<std::function<void(std::exception)>> uncaughtExceptionHandlers;
     
-    static std::atomic_uint64_t nextID = 0;
+    static std::atomic_uint64_t nextID = {0};
 //    static thread_local uint64_t thisThreadID = std::numeric_limits<uint64_t>::max();
     
     static uint64_t generateThreadID() {
@@ -113,7 +113,7 @@ namespace RogueLib::Threading {
             thisThread.attach(selfPtr.lock());
             threadID = generateThreadID();
             {
-                std::unique_lock lock{vectorMutex};
+                std::unique_lock<std::mutex> lock{vectorMutex};
                 runningThreads.emplace_back(thisThread);
             }
             try {
@@ -137,7 +137,7 @@ namespace RogueLib::Threading {
             }
             {
                 // remove this from running threads, as its about to stop
-                std::unique_lock lock{vectorMutex};
+                std::unique_lock<std::mutex> lock{vectorMutex};
                 auto iterator = runningThreads.begin();
                 do {
                     if (iterator.operator*().id() == id()) {
@@ -248,7 +248,7 @@ namespace RogueLib::Threading {
     void Thread::joinAll() {
         std::vector<Thread> threads;
         {
-            std::unique_lock lock{vectorMutex};
+            std::unique_lock<std::mutex> lock{vectorMutex};
             threads = runningThreads;
         }
         for (auto& thread : threads) {

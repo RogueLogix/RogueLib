@@ -1,10 +1,13 @@
 #pragma once
 
 #include <RogueLib/Threading/Event.hpp>
+#include <vector>
 
+#if __cplusplus >= 201703L // C++ 17
 #if __has_include(<boost/bind.hpp>)
 // not beacuse the header uses it, but because you ~~probably~~ will
 #include <boost/bind.hpp>
+#endif
 #endif
 
 namespace RogueLib::Threading {

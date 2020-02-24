@@ -1,8 +1,10 @@
 #include "RogueLib/Threading/WorkQueue.hpp"
 #include <RogueLib/Threading/cpponmulticore/sema.h>
 #include <mutex>
+#include <list>
 #include <boost/bind.hpp>
 #include <RogueLib/Threading/DestructorCallback.hpp>
+#include <shared_mutex>
 
 
 namespace RogueLib::Threading {
@@ -12,8 +14,8 @@ namespace RogueLib::Threading {
         std::mutex accessMutex;
         std::list<Item> queue;
         LightweightSemaphore dequeueSemaphore;
-        std::atomic_bool destroyed = false;
-        std::atomic_int waitingThreads = 0;
+        std::atomic_bool destroyed = {false};
+        std::atomic_int waitingThreads = {0};
     public:
         Event enqueue(Item item);
 
@@ -28,7 +30,7 @@ namespace RogueLib::Threading {
 
     Event WorkQueue::IMPL::enqueue(Item item) {
         item.whenReady(boost::bind<void>([](std::shared_ptr<IMPL> queue, Item toEnqueue) {
-            std::unique_lock lk(queue->accessMutex);
+            std::unique_lock<std::mutex> lk(queue->accessMutex);
             queue->queue.push_back(toEnqueue);
             queue->dequeueSemaphore.signal();
         }, selfPtr.lock(), item));
@@ -53,7 +55,7 @@ namespace RogueLib::Threading {
         if (destroyed) {
             return {{[]() {}}};
         }
-        std::unique_lock lk(accessMutex);
+        std::unique_lock<std::mutex> lk(accessMutex);
         Item item = queue.front();
         queue.pop_front();
         lk.unlock();
@@ -115,7 +117,7 @@ namespace RogueLib::Threading {
         Event event;
         boost::function<void()> function;
         std::mutex eventReadyMutex;
-        std::atomic_uint64_t untriggeredWaitEvents = -1;
+        std::atomic_uint64_t untriggeredWaitEvents = {UINT64_MAX};
         Event readyEvent;
     public:
         std::weak_ptr<IMPL> selfPtr;
@@ -141,7 +143,7 @@ namespace RogueLib::Threading {
         untriggeredWaitEvents = waitEvents.size();
         for (auto& waitEvent : waitEvents) {
             waitEvent.registerCallback(boost::bind<void>([](std::shared_ptr<IMPL> item) {
-                std::unique_lock lk(item->eventReadyMutex);
+                std::unique_lock<std::mutex> lk(item->eventReadyMutex);
                 item->untriggeredWaitEvents--;
                 if (item->untriggeredWaitEvents == 0) {
                     lk.unlock();
