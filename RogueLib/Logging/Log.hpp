@@ -9,11 +9,16 @@
 
 #include "RogueLib/Exceptions/Exceptions.hpp"
 
+#if __cplusplus == 201703L // C++ 17
 #if __has_include("filesystem")
+
 #include <filesystem>
+
 namespace RogueLib::Logging {
     namespace fs = std::filesystem;
 }
+
+#endif
 #else
 
 #include <experimental/filesystem>

@@ -7,6 +7,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <condition_variable>
 
 
 //TODO: buffering
@@ -74,6 +75,7 @@ namespace RogueLib {
                     return "[FATAL]";
                 }
             }
+            return "";
         }
         
     }
@@ -94,7 +96,7 @@ namespace RogueLib {
             std::thread updateThread;
             std::condition_variable updateCV;
             std::mutex updateCVMutex;
-            std::atomic_bool run = true;
+            std::atomic_bool run = {true};
             
             std::vector<LogLevel> levels;
         
@@ -137,7 +139,7 @@ namespace RogueLib {
                 return;
             }
             updateThread = std::thread{[&]() {
-                std::unique_lock lock(updateCVMutex);
+                std::unique_lock<std::mutex> lock(updateCVMutex);
                 while (run) {
                     createNewFileIfRequired();
                     updateCV.wait_until(lock, fileCreated + std::chrono::hours(24) + std::chrono::minutes(1));
@@ -148,7 +150,7 @@ namespace RogueLib {
         }
         
         void OutputFile::OutputFileIMPL::createNewFile() {
-            std::unique_lock lock(mutex);
+            std::unique_lock<std::mutex> lock(mutex);
             
             outputStream.close();
             fileCreated = std::chrono::system_clock::now();
@@ -167,7 +169,7 @@ namespace RogueLib {
         
         void OutputFile::OutputFileIMPL::write(const std::string& string, LogLevel level) {
             containsLevel(levels, level);
-            std::unique_lock lock(mutex);
+            std::unique_lock<std::mutex> lock(mutex);
             outputStream << string;
         }
         
@@ -263,12 +265,7 @@ namespace RogueLib {
             this->defaultLevel = defaultLevel;
             impl = std::make_shared<LogIMPL>(prefix, buffer);
         }
-        
-        Log::Log(Log& log) {
-            impl = log.impl;
-            defaultLevel = log.defaultLevel;
-        }
-        
+
         Log::Log(Log* log) {
             impl = log->impl;
             defaultLevel = log->defaultLevel;
@@ -445,7 +442,7 @@ namespace RogueLib {
 
         void allocateFallbackLog() {
             static std::mutex mutex;
-            std::unique_lock lock(mutex);
+            std::unique_lock<std::mutex> lock(mutex);
             if (fallbackLog != nullptr) {
                 // allocated at the same time by two threads
                 return;
