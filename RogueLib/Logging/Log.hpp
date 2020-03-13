@@ -30,7 +30,7 @@ namespace RogueLib::Logging {
 #endif
 
 namespace RogueLib::Logging {
-
+    
     enum class LogLevel {
         // technically bitwise, but because enumclass is a dick i cant use bitwise comparisons
         
@@ -54,7 +54,7 @@ namespace RogueLib::Logging {
         
         void write(std::string string, LogLevel level);
     };
-
+    
     class OutputStreamOutput {
         class OutputStreamOutputIMPL;
         
@@ -136,38 +136,38 @@ namespace RogueLib::Logging {
     extern thread_local Log* threadLog;
     
     void pushThreadLog(Log& log);
-
+    
     void popThreadLog();
-
-    class ScopeThreadLog{
+    
+    class ScopeThreadLog {
     public:
-        ScopeThreadLog(Log& log){
+        ScopeThreadLog(Log& log) {
             pushThreadLog(log);
         }
-
-        ~ScopeThreadLog(){
+        
+        ~ScopeThreadLog() {
             popThreadLog();
         }
     };
-
+    
     void setGlobalLog(Log& log);
-
+    
     void allocateFallbackLog();
     
-    static inline Log* defaultLog() {
+    static Log* defaultLog() {
         ROGUELIB_STACKTRACE
         if (threadLog == nullptr) {
             if (globalLog == nullptr) {
                 // this should never be hit, *should*
-                if(fallbackLog == nullptr){
+                if (fallbackLog == nullptr) {
                     // first time it was hit, need to allocate the fallback
                     allocateFallbackLog();
                 }
                 fallbackLog->error("FALLBACK LOG USED!");
-                #ifdef RogueLib_DEBUG
+#ifdef RogueLib_DEBUG
                 // so, you have exceptions, lets get that stack trace
                 fallbackLog->error("Current Stack Trace\n" + Exceptions::getCurrentStackTrace());
-                #endif
+#endif
                 return fallbackLog;
             }
             return globalLog;
@@ -178,7 +178,7 @@ namespace RogueLib::Logging {
     /*
      * Because passing a log to functions is tedious
      */
-    static inline void info(std::string string, Log* log = nullptr) {
+    static void info(std::string string, Log* log = nullptr) {
         ROGUELIB_STACKTRACE
         if (log == nullptr) {
             log = defaultLog();
@@ -186,7 +186,7 @@ namespace RogueLib::Logging {
         log->info(std::move(string));
     }
     
-    static inline void warning(std::string string, Log* log = nullptr) {
+    static void warning(std::string string, Log* log = nullptr) {
         ROGUELIB_STACKTRACE
         if (log == nullptr) {
             log = defaultLog();
@@ -194,7 +194,7 @@ namespace RogueLib::Logging {
         log->warning(std::move(string));
     }
     
-    static inline void error(std::string string, Log* log = nullptr) {
+    static void error(std::string string, Log* log = nullptr) {
         ROGUELIB_STACKTRACE
         if (log == nullptr) {
             log = defaultLog();
@@ -202,7 +202,7 @@ namespace RogueLib::Logging {
         log->error(std::move(string));
     }
     
-    static inline void perfWarn(std::string string, Log* log = nullptr) {
+    static void perfWarn(std::string string, Log* log = nullptr) {
         ROGUELIB_STACKTRACE
         if (log == nullptr) {
             log = defaultLog();
@@ -210,7 +210,7 @@ namespace RogueLib::Logging {
         log->perfWarn(std::move(string));
     }
     
-    static inline void trace(std::string string, Log* log = nullptr) {
+    static void trace(std::string string, Log* log = nullptr) {
         ROGUELIB_STACKTRACE
         if (log == nullptr) {
             log = defaultLog();
@@ -218,7 +218,7 @@ namespace RogueLib::Logging {
         log->trace(std::move(string));
     }
     
-    static inline void fatal(std::string string, Log* log = nullptr) {
+    static void fatal(std::string string, Log* log = nullptr) {
         ROGUELIB_STACKTRACE
         if (log == nullptr) {
             log = defaultLog();
