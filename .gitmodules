@@ -1,0 +1,3 @@
+[submodule "RogueLib/Networking/lib/infinity"]
+	path = RogueLib/Networking/lib/infinity
+	url = https://github.com/claudebarthels/infinity.git
