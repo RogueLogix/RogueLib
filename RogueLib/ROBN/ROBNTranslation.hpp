@@ -80,15 +80,56 @@ static_assert(CHAR_BIT == 8);
 static_assert(sizeof(float) == 4);
 static_assert(sizeof(double) == 8);
 
+/**
+ * FORMAT Description
+ *
+ * a ROBN blob is made up of consecutive elements with no space between them
+ * each element is a type byte, followed by that types data
+ * the format for each type's data is as follows
+ *
+ * Undefined, this should't show up, ever
+ * String, a null terminated string, same as the C in memory representation
+ * Bool, 8bit int is used for storage, encoded to 1 for true, 0 for false. decoding 0 is false, else is true, same as C++
+ *
+ * Int8, one byte copied directly to/from C++ representation
+ * Int16, two bytes copied to/from C++ representation, endianness may be flipped if required
+ * Int32, four bytes copied to/from C++ representation, endianness may be flipped if required
+ * Int64, eight bytes copied to/from C++ representation, endianness may be flipped if required
+ * Int128, sixteen bytes copied to/from C++ representation, endianness may be flipped if required
+ *
+ * uInt8, one byte copied directly to/from C++ representation
+ * uInt16, two bytes copied to/from C++ representation, endianness may be flipped if required
+ * uInt32, four bytes copied to/from C++ representation, endianness may be flipped if required
+ * uInt64, eight bytes copied to/from C++ representation, endianness may be flipped if required
+ * uInt128, sixteen bytes copied to/from C++ representation, endianness may be flipped if required
+ *
+ * Float, four bytes copied to/from C++ representation, endianness may be flipped if required
+ *          INTERNAL REPRESENTATION IS NOT CHANGED
+ * Double, eight bytes copied to/from C++ representation, endianness may be flipped if required
+ *          INTERNAL REPRESENTATION IS NOT CHANGED
+ *
+ * Vector, a length element, usually uInt64, but the decoder can handle any type here, type header required
+ *          internal element type header, one byte, may be any ROBN type, vector included
+ *          the data for each element, densely packed, each element is assumed to be able to find where
+ *          it ends based off its data and the type that it is
+ *          EACH ELEMENT MUST BE OF THE SAME TYPE, use sublist for random types
+ *
+ * Pair, the first element (with type header), the second element (with type header)
+ *
+ * Map, a length element, usually uInt64, byt the decoder can handle any type here, type header required
+ *      a list of pair elements with key/value data elements, full pair element including pair type header
+ *
+ */
+
 //todo long double?
 //todo update this with C++23, so there isn't any more undefined/implementation defined behavior
 namespace RogueLib::ROBN {
 
 #define ROGUELIB_UNUSED(x) (void)(x)
 
-    typedef std::byte byte;
+    typedef std::byte Byte;
 
-    typedef std::vector<byte> ROBN;
+    typedef std::vector<Byte> ROBN;
 
     namespace NS_ENUM_TYPE {
         /* WARNING: 121 type max (1-122)
@@ -98,27 +139,31 @@ namespace RogueLib::ROBN {
          */
         enum Type {
             Undefined = 0,
+
             String = 1, // it counts up, i know this, still putting it there manually
             Bool = 2,
+
             Int8 = 4,
             Int16 = 5,
             Int32 = 6,
             Int64 = 7,
             Int128 = 18,
+            BigInt = 21,
+
             uInt8 = 8,
             uInt16 = 9,
             uInt32 = 10,
             uInt64 = 11,
             uInt128 = 19,
+
             Float = 12,
             Double = 13,
+            LongDouble = 20,
+            BigFloat = 22,
+
             Vector = 15,
             Pair = 16,
             Map = 17,
-            SublistStart = 123, // '{' 0x7B
-            SublistElementCount = 124, // '|' 0x7C
-            SublistEnd = 125, // '}' 0x7D
-            SublistSize = 126, // '~' 0x7E
         };
     }
     typedef NS_ENUM_TYPE::Type Type;
@@ -134,6 +179,7 @@ namespace RogueLib::ROBN {
         if (std::is_same<T, bool>::value) {
             return Type::Bool;
         }
+
         if (std::is_same<T, std::int8_t>::value) {
             return Type::Int8;
         }
@@ -181,23 +227,23 @@ namespace RogueLib::ROBN {
 
             default:
                 return 0;
-            case NS_ENUM_TYPE::Bool:
-            case NS_ENUM_TYPE::Int8:
-            case NS_ENUM_TYPE::uInt8:
+            case Type::Bool:
+            case Type::Int8:
+            case Type::uInt8:
                 return 1;
-            case NS_ENUM_TYPE::Int16:
-            case NS_ENUM_TYPE::uInt16:
+            case Type::Int16:
+            case Type::uInt16:
                 return 2;
-            case NS_ENUM_TYPE::Int32:
-            case NS_ENUM_TYPE::uInt32:
-            case NS_ENUM_TYPE::Float:
+            case Type::Int32:
+            case Type::uInt32:
+            case Type::Float:
                 return 4;
-            case NS_ENUM_TYPE::Int64:
-            case NS_ENUM_TYPE::uInt64:
-            case NS_ENUM_TYPE::Double:
+            case Type::Int64:
+            case Type::uInt64:
+            case Type::Double:
                 return 8;
-            case NS_ENUM_TYPE::Int128:
-            case NS_ENUM_TYPE::uInt128:
+            case Type::Int128:
+            case Type::uInt128:
                 return 16;
         }
     }
@@ -301,7 +347,7 @@ namespace RogueLib::ROBN {
     public:
         virtual ROBN toROBN() = 0;
 
-        virtual void fromROBN(byte*& ptr, const byte* endPtr, Type type) = 0;
+        virtual void fromROBN(Byte*& ptr, const Byte* endPtr, Type type) = 0;
 
         [[nodiscard]] virtual bool isFixedBinarySize() const {
             return false;
@@ -318,7 +364,7 @@ namespace RogueLib::ROBN {
         ROGUELIB_STACKTRACE
         ROBN bytes;
         bytes.resize(sizeof(val) + 1);
-        bytes[0] = byte{primitiveTypeID<T>()};
+        bytes[0] = Byte{primitiveTypeID<T>()};
         std::memcpy(bytes.data() + 1, &val, sizeof(val));
         return bytes;
     }
@@ -350,12 +396,12 @@ namespace RogueLib::ROBN {
     // TODO: string interpretation?
     template<typename T, typename std::enable_if<
             std::is_integral<T>::value || std::is_floating_point<T>::value, int>::type = 0>
-    inline T fromROBN(byte*& ptr, const byte* endPtr, Type type) {
+    inline T fromROBN(Byte*& ptr, const Byte* endPtr, Type type) {
         ROGUELIB_STACKTRACE
         switch (removeEndianness(type)) {
             default:
                 throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
-            case NS_ENUM_TYPE::Bool: {
+            case Type::Bool: {
                 if (ptr < endPtr) {
 //                    ptr++;
 //                    return std::to_integer<bool>(ptr[-1]);
@@ -363,7 +409,7 @@ namespace RogueLib::ROBN {
                 }
                 throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
             }
-            case NS_ENUM_TYPE::Int8: {
+            case Type::Int8: {
                 std::int8_t tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
@@ -372,7 +418,7 @@ namespace RogueLib::ROBN {
                 ptr++;
                 return tempval;
             }
-            case NS_ENUM_TYPE::Int16: {
+            case Type::Int16: {
                 std::int16_t tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
@@ -381,7 +427,7 @@ namespace RogueLib::ROBN {
                 ptr += sizeof(tempval);
                 return correctEndianness(tempval, typeEndianness(type));
             }
-            case NS_ENUM_TYPE::Int32: {
+            case Type::Int32: {
                 std::int32_t tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
@@ -390,7 +436,7 @@ namespace RogueLib::ROBN {
                 ptr += sizeof(tempval);
                 return correctEndianness(tempval, typeEndianness(type));
             }
-            case NS_ENUM_TYPE::Int64: {
+            case Type::Int64: {
                 std::int64_t tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
@@ -399,7 +445,7 @@ namespace RogueLib::ROBN {
                 ptr += sizeof(tempval);
                 return correctEndianness(tempval, typeEndianness(type));
             }
-            case NS_ENUM_TYPE::Int128: {
+            case Type::Int128: {
                 __int128 tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
@@ -408,7 +454,7 @@ namespace RogueLib::ROBN {
                 ptr += sizeof(tempval);
                 return correctEndianness(tempval, typeEndianness(type));
             }
-            case NS_ENUM_TYPE::uInt8: {
+            case Type::uInt8: {
                 std::uint8_t tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
@@ -417,7 +463,7 @@ namespace RogueLib::ROBN {
                 ptr++;
                 return tempval;
             }
-            case NS_ENUM_TYPE::uInt16: {
+            case Type::uInt16: {
                 std::uint16_t tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
@@ -426,7 +472,7 @@ namespace RogueLib::ROBN {
                 ptr += sizeof(tempval);
                 return correctEndianness(tempval, typeEndianness(type));
             }
-            case NS_ENUM_TYPE::uInt32: {
+            case Type::uInt32: {
                 std::uint32_t tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
@@ -435,7 +481,7 @@ namespace RogueLib::ROBN {
                 ptr += sizeof(tempval);
                 return correctEndianness(tempval, typeEndianness(type));
             }
-            case NS_ENUM_TYPE::uInt64: {
+            case Type::uInt64: {
                 std::uint64_t tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
@@ -444,7 +490,7 @@ namespace RogueLib::ROBN {
                 ptr += sizeof(tempval);
                 return correctEndianness(tempval, typeEndianness(type));
             }
-            case NS_ENUM_TYPE::uInt128: {
+            case Type::uInt128: {
                 unsigned __int128 tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
@@ -453,7 +499,7 @@ namespace RogueLib::ROBN {
                 ptr += sizeof(tempval);
                 return correctEndianness(tempval, typeEndianness(type));
             }
-            case NS_ENUM_TYPE::Float: {
+            case Type::Float: {
                 float tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
@@ -462,7 +508,7 @@ namespace RogueLib::ROBN {
                 ptr += sizeof(tempval);
                 return correctEndianness(tempval, typeEndianness(type));
             }
-            case NS_ENUM_TYPE::Double: {
+            case Type::Double: {
                 double tempval;
                 if ((ptr + sizeof(tempval)) > endPtr) {
                     throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
@@ -475,7 +521,7 @@ namespace RogueLib::ROBN {
     }
 
     template<typename T, typename std::enable_if<std::is_enum<T>::value, int>::type = 0>
-    inline T fromROBN(byte*& ptr, const byte* endPtr, Type type) {
+    inline T fromROBN(Byte*& ptr, const Byte* endPtr, Type type) {
         return static_cast<T>(fromROBN < std::underlying_type_t<T> >
                               (ptr, endPtr, type));
     }
@@ -525,7 +571,7 @@ namespace RogueLib::ROBN {
 
 
     template<typename T, typename std::enable_if_t<std::is_same<std::string, T>::value, int> = 0>
-    inline T fromROBN(byte*& ptr, const byte* const endPtr, Type type) {
+    inline T fromROBN(Byte*& ptr, const Byte* const endPtr, Type type) {
         ROGUELIB_STACKTRACE
         if (type == Type::String) {
             auto length = strnlen((const char*) (ptr), std::size_t(endPtr - ptr));
@@ -533,11 +579,10 @@ namespace RogueLib::ROBN {
             return returnTypeBS<T>(str);
         }
         throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
-        throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
     }
 
     template<typename T, typename std::enable_if_t<std::is_base_of<Serializable, T>::value, int> = 0>
-    inline T fromROBN(byte*& ptr, const byte* const endPtr, Type type) {
+    inline T fromROBN(Byte*& ptr, const Byte* const endPtr, Type type) {
         ROGUELIB_STACKTRACE
         T t{};
         auto* tPtr = (Serializable*) &t;
@@ -559,7 +604,7 @@ namespace RogueLib::ROBN {
 
 
     template<typename V, typename std::enable_if_t<std::is_same<V, std::vector<bool>>::value, int> = 0>
-    V fromROBN(byte*& ptr, const byte* const endPtr, Type type) {
+    V fromROBN(Byte*& ptr, const Byte* const endPtr, Type type) {
         ROGUELIB_STACKTRACE
         std::vector<bool> vector;
         auto checkPtr = [&](std::uint64_t neededBytes) {
@@ -591,7 +636,7 @@ namespace RogueLib::ROBN {
 
     template<typename V, typename std::enable_if_t<
             is_std_vector<V>::value && !std::is_same<V, std::vector<bool>>::value, int> = 0>
-    V fromROBN(byte*& ptr, const byte* const endPtr, Type type) {
+    V fromROBN(Byte*& ptr, const Byte* const endPtr, Type type) {
         ROGUELIB_STACKTRACE
 
         typedef typename V::value_type T;
@@ -648,75 +693,75 @@ namespace RogueLib::ROBN {
                     default: {
                         throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
                     }
-                    case NS_ENUM_TYPE::Bool: {
+                    case Type::Bool: {
                         auto returnVector = castVector<T>(
                                 RogueLib::ROBN::fromROBN<std::vector<bool>>(startPtr, endPtr, type));
                         ptr = startPtr;
                         return returnVector;
                     }
-                    case NS_ENUM_TYPE::Int8: {
+                    case Type::Int8: {
                         auto returnVector = castVector<T>(
                                 RogueLib::ROBN::fromROBN<std::vector<std::int8_t>>(startPtr, endPtr,
                                                                                    type));
                         ptr = startPtr;
                         return returnVector;
                     }
-                    case NS_ENUM_TYPE::Int16: {
+                    case Type::Int16: {
                         auto returnVector = castVector<T>(
                                 RogueLib::ROBN::fromROBN<std::vector<std::int16_t>>(startPtr, endPtr,
                                                                                     type));
                         ptr = startPtr;
                         return returnVector;
                     }
-                    case NS_ENUM_TYPE::Int32: {
+                    case Type::Int32: {
                         auto returnVector = castVector<T>(
                                 RogueLib::ROBN::fromROBN<std::vector<std::int32_t>>(startPtr, endPtr,
                                                                                     type));
                         ptr = startPtr;
                         return returnVector;
                     }
-                    case NS_ENUM_TYPE::Int64: {
+                    case Type::Int64: {
                         auto returnVector = castVector<T>(
                                 RogueLib::ROBN::fromROBN<std::vector<std::int64_t>>(startPtr, endPtr,
                                                                                     type));
                         ptr = startPtr;
                         return returnVector;
                     }
-                    case NS_ENUM_TYPE::uInt8: {
+                    case Type::uInt8: {
                         auto returnVector = castVector<T>(
                                 RogueLib::ROBN::fromROBN<std::vector<std::uint8_t>>(startPtr, endPtr,
                                                                                     type));
                         ptr = startPtr;
                         return returnVector;
                     }
-                    case NS_ENUM_TYPE::uInt16: {
+                    case Type::uInt16: {
                         auto returnVector = castVector<T>(
                                 RogueLib::ROBN::fromROBN<std::vector<std::uint16_t>>(startPtr, endPtr,
                                                                                      type));
                         ptr = startPtr;
                         return returnVector;
                     }
-                    case NS_ENUM_TYPE::uInt32: {
+                    case Type::uInt32: {
                         auto returnVector = castVector<T>(
                                 RogueLib::ROBN::fromROBN<std::vector<std::uint32_t>>(startPtr, endPtr,
                                                                                      type));
                         ptr = startPtr;
                         return returnVector;
                     }
-                    case NS_ENUM_TYPE::uInt64: {
+                    case Type::uInt64: {
                         auto returnVector = castVector<T>(
                                 RogueLib::ROBN::fromROBN<std::vector<std::uint64_t>>(startPtr, endPtr,
                                                                                      type));
                         ptr = startPtr;
                         return returnVector;
                     }
-                    case NS_ENUM_TYPE::Float: {
+                    case Type::Float: {
                         auto returnVector = castVector<T>(
                                 RogueLib::ROBN::fromROBN<std::vector<float>>(startPtr, endPtr, type));
                         ptr = startPtr;
                         return returnVector;
                     }
-                    case NS_ENUM_TYPE::Double: {
+                    case Type::Double: {
                         auto returnVector = castVector<T>(
                                 RogueLib::ROBN::fromROBN<std::vector<double>>(startPtr, endPtr, type));
                         ptr = startPtr;
@@ -752,7 +797,7 @@ namespace RogueLib::ROBN {
     };
 
     template<typename P, typename std::enable_if_t<is_std_pair<P>::value, int> = 0>
-    inline P fromROBN(byte*& ptr, const byte* const endPtr, Type type) {
+    inline P fromROBN(Byte*& ptr, const Byte* const endPtr, Type type) {
         ROGUELIB_STACKTRACE
         typedef typename P::first_type FT;
         typedef typename P::second_type ST;
@@ -780,7 +825,7 @@ namespace RogueLib::ROBN {
     };
 
     template<typename M, typename std::enable_if_t<is_std_map<M>::value, int> = 0>
-    inline M fromROBN(byte*& ptr, const byte* const endPtr, Type type) {
+    inline M fromROBN(Byte*& ptr, const Byte* const endPtr, Type type) {
         ROGUELIB_STACKTRACE
         typedef typename M::key_type KT;
         typedef typename M::mapped_type MT;
@@ -793,7 +838,7 @@ namespace RogueLib::ROBN {
         Type lengthType = static_cast<Type>(*ptr++);
         auto length = fromROBN < std::uint64_t > (ptr, endPtr, lengthType);
         for (std::uint64_t i = 0; i < length; ++i) {
-            if (ptr >= endPtr || *(ptr++) != byte{Type::Pair}) {
+            if (ptr >= endPtr || *(ptr++) != Byte{Type::Pair}) {
                 throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
             }
             map.insert(fromROBN < std::pair<KT, MT>>
@@ -817,15 +862,15 @@ namespace RogueLib::ROBN {
                 ROBN bytes;
                 auto* valPtr = (std::string*) &val;
                 bytes.resize(valPtr->size() + 2);
-                bytes[0] = byte{Type::String};
+                bytes[0] = Byte{Type::String};
                 std::memcpy(bytes.data() + 1, valPtr->data(), valPtr->size());
-                *(bytes.end() - 1) = byte{0}; // null termination
+                *(bytes.end() - 1) = Byte{0}; // null termination
                 return bytes;
             }
             throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible type");
         }
 
-        static T fromROBN(byte*& ptr, const byte* const endPtr) {
+        static T fromROBN(Byte*& ptr, const Byte* const endPtr) {
             ROGUELIB_STACKTRACE
             if (ptr > endPtr) {
                 throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
@@ -850,9 +895,9 @@ namespace RogueLib::ROBN {
                 // empty vector
                 ROBN bytes;
                 bytes.resize(11);
-                bytes[0] = byte{Type::Vector};
-                bytes[1] = byte(Type::uInt64) |
-                           byte(Endianness::NATIVE); // endianness doesnt matter because its zero
+                bytes[0] = Byte{Type::Vector};
+                bytes[1] = Byte(Type::uInt64) |
+                           Byte(Endianness::NATIVE); // endianness doesnt matter because its zero
                 memset(bytes.data() + 2, 0, 9);
                 return bytes;
             }
@@ -862,13 +907,13 @@ namespace RogueLib::ROBN {
             bytes.resize(11 + (val.size()));
             auto* dataPtr = bytes.data();
 
-            dataPtr[0] = byte{Type::Vector};
-            dataPtr[1] = byte(Type::uInt64) | byte(Endianness::NATIVE);
+            dataPtr[0] = Byte{Type::Vector};
+            dataPtr[1] = Byte(Type::uInt64) | Byte(Endianness::NATIVE);
             dataPtr += 2;
             std::uint64_t length = val.size();
             std::memcpy(dataPtr, &length, 8);
             dataPtr += 8;
-            *dataPtr = byte{primitiveTypeID<bool>()};
+            *dataPtr = Byte{primitiveTypeID<bool>()};
             dataPtr++;
             // ok, header is done, now copy in the values
             for (int i = 0; i < val.size(); ++i) {
@@ -877,7 +922,7 @@ namespace RogueLib::ROBN {
             return bytes;
         }
 
-        static std::vector<bool, A> fromROBN(byte*& ptr, const byte* const endPtr) {
+        static std::vector<bool, A> fromROBN(Byte*& ptr, const Byte* const endPtr) {
             ROGUELIB_STACKTRACE
             if ((ptr + 1) > endPtr) {
                 throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
@@ -897,11 +942,11 @@ namespace RogueLib::ROBN {
                 // empty vector
                 ROBN bytes;
                 bytes.resize(11);
-                bytes[0] = byte{Type::Vector};
-                bytes[1] = byte(Type::uInt64) |
-                           byte(Endianness::NATIVE); // endianness doesnt matter because its zero
+                bytes[0] = Byte{Type::Vector};
+                bytes[1] = Byte(Type::uInt64) |
+                           Byte(Endianness::NATIVE); // endianness doesnt matter because its zero
                 for (int i = 2; i < 11; ++i) {
-                    bytes[i] = byte{0};
+                    bytes[i] = Byte{0};
                 }
                 return bytes;
             }
@@ -912,13 +957,13 @@ namespace RogueLib::ROBN {
                 bytes.resize(11 + (val.size() * sizeof(T)));
                 auto* dataPtr = bytes.data();
 
-                dataPtr[0] = byte{Type::Vector};
-                dataPtr[1] = byte(Type::uInt64) | byte(Endianness::NATIVE);
+                dataPtr[0] = Byte{Type::Vector};
+                dataPtr[1] = Byte(Type::uInt64) | Byte(Endianness::NATIVE);
                 dataPtr += 2;
                 std::uint64_t length = val.size();
                 std::memcpy(dataPtr, &length, 8);
                 dataPtr += 8;
-                *dataPtr = byte{primitiveTypeID<T>()};
+                *dataPtr = Byte{primitiveTypeID<T>()};
                 dataPtr++;
                 // ok, header is done, now copy in the values
                 std::memcpy(dataPtr, val.data(), val.size() * sizeof(T));
@@ -935,12 +980,12 @@ namespace RogueLib::ROBN {
 //                }
 
                 // ok, so, lets see if the size is fixed so i can do pre-allocation
-                if (isFixedBinarySize<T>()) {
-                    bytes.resize(11 + typeBinarySize<T>() * val.size());
+                if (isFixedBinarySize < T > ()) {
+                    bytes.reserve(11 + typeBinarySize<T>() * val.size());
                 }
 
                 auto* dataPtr = bytes.data();
-                std::uint64_t usedBytes = 0;
+                std::uint64_t usedBytes = bytes.size();
                 auto requestBytes = [&](std::uint64_t requestedBytes) {
                     if (usedBytes + requestedBytes > bytes.size()) {
                         bytes.resize(usedBytes + requestedBytes);
@@ -951,28 +996,30 @@ namespace RogueLib::ROBN {
 
                 requestBytes(11);
 
-                dataPtr[0] = byte{Type::Vector};
-                dataPtr[1] = byte(Type::uInt64) | byte(Endianness::NATIVE);
+                dataPtr[0] = Byte{Type::Vector};
+                dataPtr[1] = Byte(Type::uInt64) | Byte(Endianness::NATIVE);
                 dataPtr += 2;
                 std::uint64_t length = bytes.size();
                 std::memcpy(dataPtr, &length, 8);
                 dataPtr += 8;
-                *dataPtr = byte{primitiveTypeID<T>()};
-                dataPtr++;
+                *dataPtr = Byte{primitiveTypeID<T>()};
 
 
-                bool first = true;
+                std::vector<ROBN> subROBN;
+                subROBN.reserve(length);
+
+                std::uint64_t byteLength = 0;
+
                 for (auto& element: val) {
                     auto vec = BinaryConversion<T>::toROBN(element);
-                    if (first) {
-                        std::uint64_t newSize = 11 + (val.size() * vec.size());
-                        if (newSize > bytes.size()) {
-                            bytes.reserve(newSize);
-                            dataPtr = bytes.data();
-                        }
-                    }
-//                    requestBytes(vec.size());
-//                    std::memcpy(dataPtr, vec.data() + 1, vec.size() - 1);
+                    byteLength += vec.size();
+                    subROBN.emplace_back(vec);
+                }
+
+                bytes.reserve(bytes.size() + byteLength);
+
+                bool first = true;
+                for (const auto& vec : subROBN) {
                     bytes.insert(bytes.end(), vec.begin() + (first ? 0 : 1), vec.end());
                     first = false;
                 }
@@ -980,7 +1027,7 @@ namespace RogueLib::ROBN {
             }
         }
 
-        static std::vector<T, A> fromROBN(byte*& ptr, const byte* const endPtr) {
+        static std::vector<T, A> fromROBN(Byte*& ptr, const Byte* const endPtr) {
             ROGUELIB_STACKTRACE
             if ((ptr + 1) > endPtr) {
                 throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
@@ -1002,7 +1049,7 @@ namespace RogueLib::ROBN {
             ROBN bytes;
             bytes.resize(firstBytes.size() + secondBytes.size() + 1);
             auto data = bytes.data();
-            data[0] = byte{Type::Pair};
+            data[0] = Byte{Type::Pair};
             data++;
             std::memcpy(data, firstBytes.data(), firstBytes.size());
             data += firstBytes.size();
@@ -1010,7 +1057,7 @@ namespace RogueLib::ROBN {
             return bytes;
         }
 
-        static std::pair<T, A> fromROBN(byte*& ptr, const byte* const endPtr) {
+        static std::pair<T, A> fromROBN(Byte*& ptr, const Byte* const endPtr) {
             ROGUELIB_STACKTRACE
             if (ptr >= endPtr) {
                 throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
@@ -1028,7 +1075,7 @@ namespace RogueLib::ROBN {
             ROGUELIB_STACKTRACE
             ROBN bytes;
 
-            bytes.emplace_back(byte{Type::Map});
+            bytes.emplace_back(Byte{Type::Map});
 
             auto lengthBytes = BinaryConversion<std::uint64_t>::toROBN(val.size());
             bytes.insert(bytes.end(), lengthBytes.begin(), lengthBytes.end());
@@ -1041,7 +1088,7 @@ namespace RogueLib::ROBN {
             return bytes;
         }
 
-        static std::map<T, A> fromROBN(byte*& ptr, const byte* const endPtr) {
+        static std::map<T, A> fromROBN(Byte*& ptr, const Byte* const endPtr) {
             ROGUELIB_STACKTRACE
             if (ptr >= endPtr) {
                 throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
@@ -1080,8 +1127,8 @@ namespace RogueLib::ROBN {
     template<typename T>
     T fromROBN(ROBN bytes) {
         ROGUELIB_STACKTRACE
-        auto* start = (byte*) bytes.data();
-        auto* end = (byte*) (bytes.data() + bytes.size());
+        auto* start = (Byte*) bytes.data();
+        auto* end = (Byte*) (bytes.data() + bytes.size());
         return BinaryConversion<T>::fromROBN(start, end);
     }
 }
