@@ -110,7 +110,7 @@ namespace RogueLib::Logging {
         
         explicit Log(std::string prefix, bool buffer = false, LogLevel defaultLevel = LogLevel::INFO);
         
-        explicit Log(std::string prefix, LogLevel defaultLevel = LogLevel::INFO);
+        explicit Log(std::string prefix, LogLevel defaultLevel);
         
         Log(Log& log);
         
