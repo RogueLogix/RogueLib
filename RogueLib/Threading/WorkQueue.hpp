@@ -89,5 +89,5 @@ namespace RogueLib::Threading {
         void addQueueThread();
     };
 
-    void addQueueProcessingThread(WorkQueue queue);
+    void addQueueProcessingThread(WorkQueue queue, std::function<void()> startup = {}, std::function<void()> shutdown = {});
 }
