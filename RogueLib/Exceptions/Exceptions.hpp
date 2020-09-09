@@ -130,6 +130,23 @@ std::unique_ptr<RogueLib::Exceptions::StackTraceRecorder> cubitStackTraceUnwindD
         FatalError(const char* function, const char* file, int linenum, std::string message, std::string errorType);
     };
 
+    class FatalFileNotFound : public FatalError {
+    public:
+        FatalFileNotFound(const char* function, const char* file, int linenum, std::string message)
+                : FatalError(function, file, linenum, std::move(message), "FatalFileNotFound") {
+        }
+    };
+
+    class FatalInvalidState : public FatalError {
+    public:
+        FatalInvalidState(const char* function, const char* file, int linenum, const std::string& message,
+                          std::string errorType = "FatalInvalidState")
+                : FatalError(function, file, linenum, message, std::move(errorType)) {
+        }
+
+
+    };
+
     class FatalInitFailure : public FatalError {
     public:
         FatalInitFailure(const char* function, const char* file, int linenum, std::string message);
