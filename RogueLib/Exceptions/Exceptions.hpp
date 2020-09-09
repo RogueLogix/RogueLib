@@ -19,11 +19,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
- 
+
 #pragma once
 
 #include <stack>
 #include <string>
+#include <utility>
 #include <vector>
 #include <memory>
 
@@ -53,17 +54,20 @@ namespace RogueLib::Exceptions {
         StackTraceElement(StackTraceElement& element);
     };
 
-#ifdef RogueLib_DEBUG
+#ifndef NDEBUG
 #define ROGUELIB_STACKTRACE \
-auto& _func_ = __func__;\
+static auto _RL_func_ = __func__;\
 std::unique_ptr<RogueLib::Exceptions::StackTraceRecorder> cubitStackTraceUnwindDeletor\
-(new RogueLib::Exceptions::StackTraceRecorder(_func_, __FILE__, __LINE__ - 1));
+(new RogueLib::Exceptions::StackTraceRecorder(_RL_func_, __FILE__, __LINE__ - 1));
 #define ROGUELIB_RESTACKTRACE cubitStackTraceUnwindDeletor->updateStackTraceLine(__LINE__);
+#define ROGUELIB_LAMBDATRACE \
+std::unique_ptr<RogueLib::Exceptions::StackTraceRecorder> cubitStackTraceUnwindDeletor\
+(new RogueLib::Exceptions::StackTraceRecorder(_RL_func_, __FILE__, __LINE__ - 1));
 #else
 #define ROGUELIB_STACKTRACE auto& _func_ = __func__;
 #define ROGUELIB_RESTACKTRACE
 #endif
-#define ROGUELIB_EXCEPTION_INFO _func_, __FILE__, __LINE__
+#define ROGUELIB_EXCEPTION_INFO _RL_func_, __FILE__, __LINE__
 
     class ErrorBase : public std::exception {
         std::vector<std::shared_ptr<StackTraceElement>> stacktrace;
@@ -80,7 +84,23 @@ std::unique_ptr<RogueLib::Exceptions::StackTraceRecorder> cubitStackTraceUnwindD
 
         std::string getStackTrace();
 
-        virtual const char* what() const noexcept;
+        const char* what() const noexcept override;
+
+        std::string msg(){
+            return {message};
+        }
+
+        std::string type(){
+            return {errorType};
+        }
+
+        std::string printMsg(){
+            return {printMessage};
+        }
+
+        bool fatality(){
+            return fatal;
+        }
     };
 
     class Error : public ErrorBase {
@@ -128,6 +148,23 @@ std::unique_ptr<RogueLib::Exceptions::StackTraceRecorder> cubitStackTraceUnwindD
     class FatalError : public ErrorBase {
     public:
         FatalError(const char* function, const char* file, int linenum, std::string message, std::string errorType);
+    };
+
+    class FatalFileNotFound : public FatalError {
+    public:
+        FatalFileNotFound(const char* function, const char* file, int linenum, std::string message)
+                : FatalError(function, file, linenum, std::move(message), "FatalFileNotFound") {
+        }
+    };
+
+    class FatalInvalidState : public FatalError {
+    public:
+        FatalInvalidState(const char* function, const char* file, int linenum, const std::string& message,
+                          std::string errorType = "FatalInvalidState")
+                : FatalError(function, file, linenum, message, std::move(errorType)) {
+        }
+
+
     };
 
     class FatalInitFailure : public FatalError {

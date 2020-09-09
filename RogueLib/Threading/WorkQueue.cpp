@@ -171,7 +171,7 @@ namespace RogueLib::Threading {
                     lk.unlock();
                     item->readyEvent.trigger();
                 }
-            },selfPtr.lock()));
+            }, selfPtr.lock()));
         }
     }
 
@@ -189,8 +189,10 @@ namespace RogueLib::Threading {
 
     void WorkQueue::Item::IMPL::process() {
         readyEvent.wait();
+        DestructorCallback callback{[=]() {
+            this->event.trigger();
+        }};
         function();
-        event.trigger();
     }
 }
 
@@ -267,17 +269,20 @@ namespace RogueLib::Threading {
 #include <utility>
 
 namespace RogueLib::Threading {
-    void addQueueProcessingThread(WorkQueue queue) {
-        Thread thread(boost::bind<void>([](WorkQueue::Dequeue dequeue) {
-            while (dequeue) {
-                auto item = dequeue.dequeue();
-                try {
-                    item.process();
-                } catch (std::exception& ignored) {
-                    // yes i ignore the exception, its not my problem that it rolled all the way back to here...
-                }
-            }
-        }, queue.dequeue()));
+    void addQueueProcessingThread(WorkQueue queue, std::function<void()> startup, std::function<void()> shutdown) {
+        Thread thread(boost::bind<void>(
+                [](WorkQueue::Dequeue dequeue, std::function<void()> start, std::function<void()> end) {
+                    start();
+                    while (dequeue) {
+                        auto item = dequeue.dequeue();
+                        try {
+                            item.process();
+                        } catch (std::exception& ignored) {
+                            // yes i ignore the exception, its not my problem that it rolled all the way back to here...
+                        }
+                    }
+                    end();
+                }, queue.dequeue(), startup, shutdown));
         thread.start();
     }
 }

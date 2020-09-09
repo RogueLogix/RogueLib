@@ -1,5 +1,5 @@
 if (CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
-    set(ROGUELIB_TOPLEVEL TRUE)
+#    set(ROGUELIB_TOPLEVEL TRUE)
 endif ()
 
 cmake_minimum_required(VERSION 3.14)

@@ -80,7 +80,11 @@ namespace RogueLib::Exceptions {
             stacktraceCopy.pop();
         }
 
-        getStackTrace();
+        printMessage = {};
+        printMessage += this->errorType;
+        printMessage += ": ";
+        printMessage += this->message;
+        printMessage += getStackTrace();
     }
 
     const char* ErrorBase::what() const noexcept {
@@ -105,7 +109,6 @@ namespace RogueLib::Exceptions {
 
             trace += stringToPrint;
         }
-        printMessage = trace;
         return trace;
     }
 
