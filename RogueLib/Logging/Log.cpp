@@ -393,6 +393,7 @@ namespace RogueLib {
         
         void OutputStreamOutput::OutputStreamOutputIMPL::write(const std::string& string) {
             *ostream << string;
+            ostream->flush();
         }
         
         OutputStreamOutput::OutputStreamOutputIMPL::OutputStreamOutputIMPL(std::ostream* ostream, bool buffer) {

@@ -112,8 +112,6 @@ namespace RogueLib::Logging {
         
         explicit Log(std::string prefix, LogLevel defaultLevel);
         
-        Log(Log& log);
-        
         Log(Log* log);
         
         Log& operator=(Log* log);
