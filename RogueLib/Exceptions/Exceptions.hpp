@@ -64,8 +64,9 @@ std::unique_ptr<RogueLib::Exceptions::StackTraceRecorder> cubitStackTraceUnwindD
 std::unique_ptr<RogueLib::Exceptions::StackTraceRecorder> cubitStackTraceUnwindDeletor\
 (new RogueLib::Exceptions::StackTraceRecorder(_RL_func_, __FILE__, __LINE__ - 1));
 #else
-#define ROGUELIB_STACKTRACE auto& _func_ = __func__;
+#define ROGUELIB_STACKTRACE auto& _RL_func_ = __func__;
 #define ROGUELIB_RESTACKTRACE
+#define ROGUELIB_LAMBDATRACE
 #endif
 #define ROGUELIB_EXCEPTION_INFO _RL_func_, __FILE__, __LINE__
 
