@@ -117,7 +117,7 @@ add_subdirectory(RogueLib/ROBN)
 add_subdirectory(RogueLib/Logging)
 add_subdirectory(RogueLib/Networking)
 # add_subdirectory(RogueLib/NUMA)
-add_subdirectory(RogueLib/Scripting)
+#add_subdirectory(RogueLib/Scripting)
 add_subdirectory(RogueLib/Threading)
 
 add_library(RogueLib INTERFACE)
