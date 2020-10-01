@@ -576,6 +576,8 @@ namespace RogueLib::ROBN {
         if (type == Type::String) {
             auto length = strnlen((const char*) (ptr), std::size_t(endPtr - ptr));
             std::string str{(const char*) (ptr), length};
+            ptr += length;
+            ptr++;
             return returnTypeBS<T>(str);
         }
         throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
@@ -807,11 +809,13 @@ namespace RogueLib::ROBN {
         }
         P pair{};
         Type firstType = static_cast<Type>(*ptr);
+        ptr++;
         pair.first = fromROBN < FT > (ptr, endPtr, firstType);
         if (ptr >= endPtr) {
             throw Exceptions::InvalidArgument(ROGUELIB_EXCEPTION_INFO, "Incompatible binary");
         }
         Type secondType = static_cast<Type>(*ptr);
+        ptr++;
         pair.second = fromROBN < ST > (ptr, endPtr, secondType);
         return pair;
     }
