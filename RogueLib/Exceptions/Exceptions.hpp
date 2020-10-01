@@ -57,11 +57,11 @@ namespace RogueLib::Exceptions {
 #ifndef NDEBUG
 #define ROGUELIB_STACKTRACE \
 static auto _RL_func_ = __func__;\
-std::unique_ptr<RogueLib::Exceptions::StackTraceRecorder> cubitStackTraceUnwindDeletor\
+std::unique_ptr<RogueLib::Exceptions::StackTraceRecorder> roguelibStackTraceUnwindDeletor\
 (new RogueLib::Exceptions::StackTraceRecorder(_RL_func_, __FILE__, __LINE__ - 1));
-#define ROGUELIB_RESTACKTRACE cubitStackTraceUnwindDeletor->updateStackTraceLine(__LINE__);
+#define ROGUELIB_RESTACKTRACE roguelibStackTraceUnwindDeletor->updateStackTraceLine(__LINE__);
 #define ROGUELIB_LAMBDATRACE \
-std::unique_ptr<RogueLib::Exceptions::StackTraceRecorder> cubitStackTraceUnwindDeletor\
+std::unique_ptr<RogueLib::Exceptions::StackTraceRecorder> roguelibStackTraceUnwindDeletor\
 (new RogueLib::Exceptions::StackTraceRecorder(_RL_func_, __FILE__, __LINE__ - 1));
 #else
 #define ROGUELIB_STACKTRACE auto& _RL_func_ = __func__;
